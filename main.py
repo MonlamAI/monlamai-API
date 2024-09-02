@@ -48,4 +48,5 @@ app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)],tags=["text to speech"])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=1000, reload=True)
+    PORT=os.getenv("PORT")
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
