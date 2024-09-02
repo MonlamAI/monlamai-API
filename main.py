@@ -9,6 +9,7 @@ from v1.ocr import router as ocrRoute
 import uvicorn
 from v1.auth.auth_handler import verify_token 
 from dotenv import load_dotenv
+import os 
 
 load_dotenv(override=True)
 
@@ -47,6 +48,14 @@ app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_
 app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_token)],tags=["speech to text"])
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)],tags=["text to speech"])
 
+def get_port():
+    """Retrieve the PORT from environment variables, defaulting to 8000 if not set."""
+    port = os.getenv("PORT", 8000)  # Default to 8000 if PORT is not set
+    try:
+        return int(port)  # Ensure the port is an integer
+    except ValueError:
+        raise ValueError(f"Invalid PORT value: {port}. It must be an integer.")
+
 if __name__ == "__main__":
-    PORT=os.getenv("PORT")
-    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
+    port = get_port()
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
