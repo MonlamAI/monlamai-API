@@ -6,12 +6,14 @@ from v1.libs.base64_to_file_buffer import base64_to_file_buffer
 import uuid
 import base64
 import time
+
 router = APIRouter()
 class Input(BaseModel):
     input: str
     
 
 @router.get("/")
+
 async def check_translation():
        text="ངའི་མིང་ལ་ཀུན་བཟང་རེད་།" 
        try:
@@ -29,6 +31,7 @@ async def check_translation():
         raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
 
 @router.post("/")
+
 async def translate(request:Input):
        try:
         audio_data = await tibetan_synthesizer(

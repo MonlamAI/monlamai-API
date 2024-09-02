@@ -30,6 +30,7 @@ async def check_translation():
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/")
+
 async def translate(request:Input):
        try:
         translated = await translator(
@@ -46,6 +47,7 @@ async def translate(request:Input):
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/stream")
+
 async def stream_translate(request: Input):
     if not request.input or not request.target:
         raise HTTPException(status_code=400, detail="Missing input or target field.")

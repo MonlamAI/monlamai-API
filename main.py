@@ -1,7 +1,10 @@
 # main.py
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends,Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from v1.translation import router as translationRoute
 from v1.tts import router as ttsRoute
 from v1.stt import router as sttRoute
@@ -10,8 +13,15 @@ import uvicorn
 from v1.auth.auth_handler import verify_token 
 from dotenv import load_dotenv
 import os 
+import logging
+from datetime import datetime
+
 
 load_dotenv(override=True)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 description = """
 ## Monlam API helps you use our AI models. 🚀
@@ -30,6 +40,13 @@ app = FastAPI(
         "email": "officials@monlam.com",
     })
 
+# Create a rate limiter instance
+limiter = Limiter(key_func=get_remote_address)
+# Add rate limiting middleware
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
@@ -37,6 +54,22 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware to log client IP, request method, and time."""
+    client_ip = request.client.host
+    method = request.method
+    request_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    path = request.url.path
+    
+    logging.info(f"Client IP: {client_ip} | Time: {request_time} | Method: {method} | Path: {path}")
+
+    # Call the next middleware or request handler
+    
+    response = await call_next(request)
+    return response
+
 
 @app.get("/")
 def read_root():
