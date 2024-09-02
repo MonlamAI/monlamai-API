@@ -2,9 +2,6 @@
 
 from fastapi import FastAPI, Depends,Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 from v1.translation import router as translationRoute
 from v1.tts import router as ttsRoute
 from v1.stt import router as sttRoute
@@ -15,6 +12,11 @@ from dotenv import load_dotenv
 import os 
 import logging
 from datetime import datetime
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 
 
 load_dotenv(override=True)
@@ -27,7 +29,7 @@ description = """
 ## Monlam API helps you use our AI models. 🚀
 
 """
-
+limiter = Limiter(key_func=get_remote_address, default_limits=["8/minute"])
 app = FastAPI(
     title="Monlam API",
     description=description,
@@ -40,12 +42,9 @@ app = FastAPI(
         "email": "officials@monlam.com",
     })
 
-# Create a rate limiter instance
-limiter = Limiter(key_func=get_remote_address)
-# Add rate limiting middleware
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
