@@ -3,7 +3,7 @@ from google.cloud import vision
 from google.oauth2 import service_account
 from google.protobuf.json_format import MessageToJson
 from google.cloud.vision import AnnotateImageResponse
-
+import os
 
 def is_png(image_data):
     return image_data[:8] == b'\x89PNG\r\n\x1a\n'
@@ -15,8 +15,13 @@ async def read_file_async(image_path):
     
 
 async def google_ocr(image, lang_hint=None):
+    environment = os.getenv('ENV', 'development')
     # Load credentials
-    credentials = service_account.Credentials.from_service_account_file('env/ocr_credentials.json')
+    if environment == 'production':
+     path = '/etc/secrets/ocr_credentials.json'
+    else:
+     path = 'env/ocr_credentials.json'
+    credentials = service_account.Credentials.from_service_account_file(path)
 
     client = vision.ImageAnnotatorClient(credentials=credentials)
 
