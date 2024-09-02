@@ -12,10 +12,6 @@ class Input(BaseModel):
     
 
 @router.get("/")
-def read_root():
-    return {"message": "Welcome to API v1 text to Speech"}
-
-@router.get("/check")
 async def check_translation():
        text="ངའི་མིང་ལ་ཀུན་བཟང་རེད་།" 
        try:

@@ -10,11 +10,8 @@ router = APIRouter()
 class Input(BaseModel):
     input: str
 
-@router.get("/")
-def read_root():
-    return {"message": "Welcome to API v1 Speech to text"}
 
-@router.get("/check")
+@router.get("/")
 async def check_stt():
        audio_url ="https://s3.ap-south-1.amazonaws.com/monlam.ai.website/STT/input/1719051360666-undefined"
        try:

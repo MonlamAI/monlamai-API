@@ -12,10 +12,6 @@ class Input(BaseModel):
     
 
 @router.get("/")
-def read_root():
-    return {"message": "Welcome to API v1 translation"}
-
-@router.get("/check")
 async def check_translation():
        text='hi hello how are you',
        direction='bo'
