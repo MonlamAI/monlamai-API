@@ -11,6 +11,7 @@ API_TOKEN =os.getenv("API_KEY")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
+    
     if token != API_TOKEN:
         # If the token does not match the expected API token, raise a 401 Unauthorized error
         raise HTTPException(

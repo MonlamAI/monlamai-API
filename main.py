@@ -1,16 +1,25 @@
 # main.py
 
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from v1.translation import router as translationRoute
 from v1.tts import router as ttsRoute
 from v1.stt import router as sttRoute
 from v1.ocr import router as ocrRoute
-from dotenv import load_dotenv
 import uvicorn
 from v1.auth.auth_handler import verify_token 
+from dotenv import load_dotenv
 
 load_dotenv(override=True)
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.get("/")
 def read_root():
@@ -23,4 +32,4 @@ app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=1000, reload=True)

@@ -38,7 +38,7 @@ async def translate(request:Input):
         text_data = await speech_to_text(audio)
         return {
             "success": True,
-            "audio": text_data['text'],
+            "output": text_data['text'],
             "responseTime": text_data['response_time'],
         }
     
