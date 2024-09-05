@@ -6,18 +6,18 @@ from v1.translation import router as translationRoute
 from v1.tts import router as ttsRoute
 from v1.stt import router as sttRoute
 from v1.ocr import router as ocrRoute
+import models 
 import uvicorn
 from v1.auth.auth_handler import verify_token 
-from dotenv import load_dotenv
 import os 
 import logging
 from datetime import datetime
-
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
-
+from db import engine
+from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
@@ -45,6 +45,10 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# database connection
+models.Base.metadata.create_all(bind=engine)
+
 
 app.add_middleware(
     CORSMiddleware,
