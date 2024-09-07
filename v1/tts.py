@@ -20,7 +20,7 @@ class Input(BaseModel):
  
 
 @router.get("/")
-async def check_translation():
+async def check_text_to_speech():
        text="ངའི་མིང་ལ་ཀུན་བཟང་རེད་།" 
        try:
         audio_data = await tibetan_synthesizer(

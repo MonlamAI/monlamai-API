@@ -8,6 +8,8 @@ from v1.auth.token_verify import verify
 from db import get_db
 from v1.model.create_inference import create_translation
 from v1.utils.utils import get_client_metadata
+from v1.utils.utils import get_user_id
+
 router = APIRouter()
 
 class Input(BaseModel):
@@ -38,9 +40,7 @@ async def check_translation():
 
 async def translate(request:Input, client_request: Request):
     token=request.id_token
-    user_id=None
-    if token:
-        user_id=verify(token)
+    user_id = get_user_id(token)
     try:
         translated = await translator(request.input, request.target)
         # save translations
@@ -73,9 +73,7 @@ async def translate(request:Input, client_request: Request):
 @router.post("/stream")
 async def stream_translate(request: Input, client_request: Request):
     token=request.id_token
-    user_id=None
-    if token:
-        user_id=verify(token)
+    user_id = get_user_id(token)
        
     if not request.input or not request.target:
         raise HTTPException(status_code=400, detail="Missing input or target field.")

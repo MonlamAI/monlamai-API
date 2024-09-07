@@ -17,7 +17,7 @@ class Input(BaseModel):
 
 @router.get("/")
 
-async def check_stt():
+async def check_speech_to_text():
        audio_url ="https://s3.ap-south-1.amazonaws.com/monlam.ai.website/STT/input/1719051360666-undefined"
        audio=await get_buffer(audio_url)
        try:   
@@ -32,7 +32,7 @@ async def check_stt():
         raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
 
 @router.post("/")
-async def transcribe(request:Input, client_request: Request):
+async def speech_to_text(request:Input, client_request: Request):
        token = request.id_token
        user_id = get_user_id(token)
        try:

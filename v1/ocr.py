@@ -16,8 +16,7 @@ class Input(BaseModel):
 
 
 @router.get("/")
-
-async def check():
+async def check_ocr():
        image_url ="https://s3.ap-south-1.amazonaws.com/monlam.ai.website/OCR/input/1717734852871-IMG_7580.jpeg"
        buffer=await get_buffer(image_url)
        try:
@@ -33,7 +32,7 @@ async def check():
         raise HTTPException(status_code=500, detail=f"ocr failed: {str(e)}")
 
 @router.post("/")
-async def ocr_text(request: Input, client_request: Request):
+async def ocr(request: Input, client_request: Request):
        token = request.id_token
        user_id = get_user_id(token)
        client_ip, source_app = get_client_metadata(client_request)
