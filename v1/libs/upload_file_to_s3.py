@@ -10,7 +10,7 @@ load_dotenv(override=True)
 # AWS S3 Configuration
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
-AWS_S3_BUCKET_NAME = os.getenv("BUCKET_NAME")
+AWS_S3_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_REGION")
 
 async def upload_file_to_s3(file: Any, content_type: str, filename: str) -> str:
