@@ -10,7 +10,8 @@ import time
 from v1.utils.utils import get_client_metadata
 from typing import Optional
 from v1.utils.utils import get_user_id
-
+from v1.libs.chunk_text import chunk_tibetan_text
+from v1.libs.merge_audio_chunks import merge_audio_buffers
 router = APIRouter()
 class Input(BaseModel):
     input: str
@@ -42,6 +43,9 @@ async def text_to_speech(request: Input, client_request: Request):
 
     try:
         # Generate audio data from text input
+        # chunked_text= chunk_tibetan_text(request.input)
+        
+        # audio_data =await process_text_chunks(chunked_text)
         audio_data = await tibetan_synthesizer(request.input)
         base64_audio = audio_data['audio']
         file_url = await handle_audio_file(base64_audio)
@@ -68,10 +72,18 @@ async def text_to_speech(request: Input, client_request: Request):
 async def handle_audio_file(base64_audio):
     file_data = base64_to_file_buffer(base64_audio)
     timestamp = int(time.time())
-    file_name = f"{timestamp}_{uuid.uuid4()}-tts-audio.wav"
+    file_name = f"TTS/output/{timestamp}_{uuid.uuid4()}-tts-audio.wav"
     file_url = await upload_file_to_s3(file_data, "audio/wav", file_name)
     return file_url
 
+async def process_text_chunks(text_chunks):
+    audio_chunks = []
+    for chunk in text_chunks:
+        amplified_audio_string = await tibetan_synthesizer(chunk)
+        audio_chunks.append(amplified_audio_string['audio'])
+    
+    merged_audio = await merge_audio_buffers(audio_chunks)
+    return merged_audio
 
 def save_tts_data(db, input_text, file_url, response_time, client_ip, source_app, user_id):
     tts_data = {

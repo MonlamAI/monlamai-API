@@ -29,7 +29,7 @@ async def tibetan_synthesizer(text: str):
             audio = response_data.get('audio_base64', '')
     except Exception as e:
         raise RuntimeError(API_ERROR_MESSAGE) from e
-
+    print(audio)
     return { "response_time" :response_time , "audio" :audio }
 
 def input_replace(text: str) -> str:
