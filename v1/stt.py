@@ -32,7 +32,7 @@ async def check_speech_to_text():
         raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
 
 @router.post("/")
-async def speech_to_text(request:Input, client_request: Request):
+async def speech_to_text_func(request:Input, client_request: Request):
        token = request.id_token
        user_id = get_user_id(token)
        try:
@@ -68,6 +68,7 @@ def save_stt_data(db, input, output, response_time, client_ip, source_app, user_
      create_speech_to_text(db, stt_data)
 
 async def transcribe_audio(audio, lang):
+    print(audio,lang)
     if lang and lang != 'bo':
         # Call Whisper if a specific language is provided and it's not 'bo'
         text_data = whisper_stt(audio)

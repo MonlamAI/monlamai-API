@@ -19,7 +19,6 @@ def whisper_stt(audio_data):
     headers = {
         "Authorization": f"Bearer {api_key}"
     }
-    
     # Handle URL
     if isinstance(audio_data, str) and audio_data.startswith('http'):
         audio_data = get_audio_from_url(audio_data)
