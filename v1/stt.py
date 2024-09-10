@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException,Request
-from v1.utils.speech_recognition import speech_to_text
+from v1.utils.speech_recognition import speech_to_text_tibetan,speech_to_text_english
 from v1.libs.get_buffer import get_buffer
 from v1.utils.whisper_stt import whisper_stt
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ async def check_speech_to_text():
        audio_url ="https://s3.ap-south-1.amazonaws.com/monlam.ai.website/STT/input/1719051360666-undefined"
        audio=await get_buffer(audio_url)
        try:   
-         text_data =await speech_to_text(audio)
+         text_data =await speech_to_text_tibetan(audio)
          return {
             "success": True,
             "audio": text_data['text'],
@@ -68,15 +68,14 @@ def save_stt_data(db, input, output, response_time, client_ip, source_app, user_
      create_speech_to_text(db, stt_data)
 
 async def transcribe_audio(audio, lang):
-    print(audio,lang)
     if lang and lang != 'bo':
         # Call Whisper if a specific language is provided and it's not 'bo'
-        text_data = whisper_stt(audio)
-        response_time = "whisper"
+        text_data =await speech_to_text_english(audio)
+        response_time = round(text_data['response_time'] * 1000, 4)
     else:
         # Call general speech-to-text function for language 'bo'
-        text_data = await speech_to_text(audio)
+        text_data = await speech_to_text_tibetan(audio)
         response_time = round(text_data['response_time'] * 1000, 4)
        
-        text_data = text_data['text']
+    text_data = text_data['text']
     return text_data, response_time

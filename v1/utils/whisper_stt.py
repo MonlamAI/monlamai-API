@@ -2,6 +2,17 @@ import requests
 from io import BytesIO
 import os 
 
+def check_quota():
+    api_key=os.getenv("OPENAI_API_KEY")
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+    }
+    url = "https://api.openai.com/v1/usage"  # URL for usage check
+    response = requests.get(url, headers=headers)
+    usage_data = response.json()
+    return usage_data
+
 def get_audio_from_url(url):
   
     try:
@@ -14,6 +25,12 @@ def get_audio_from_url(url):
 
 def whisper_stt(audio_data):
     api_key=os.getenv("OPENAI_API_KEY")
+    
+    quota_data = check_quota()
+    remaining_quota = quota_data.get('remaining_quota', 0)
+    if remaining_quota <= 0:
+        print("Quota exceeded. Please check your billing plan.")
+        return None
     
     url = "https://api.openai.com/v1/audio/transcriptions"
     headers = {
@@ -51,6 +68,7 @@ def whisper_stt(audio_data):
         
         # Debug: Print full response details
     response_data = response.json()
+    print(response_data)
     response.raise_for_status()
 
     if response_data:
