@@ -6,6 +6,7 @@ from v1.translation import router as translationRoute
 from v1.tts import router as ttsRoute
 from v1.stt import router as sttRoute
 from v1.ocr import router as ocrRoute
+from v1.s3 import router as s3Route
 import models 
 import uvicorn
 from v1.auth.auth_handler import verify_token 
@@ -83,6 +84,8 @@ app.include_router(translationRoute, prefix="/api/v1/translation",dependencies=[
 app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_token)],tags=["ocr"])
 app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_token)],tags=["speech to text"])
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)],tags=["text to speech"])
+app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verify_token)],tags=["file upload"])
+
 
 def get_port():
     """Retrieve the PORT from environment variables, defaulting to 8000 if not set."""

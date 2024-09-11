@@ -42,6 +42,8 @@ async def ocr(request: Input, client_request: Request):
         image=await get_buffer(image_url)
         coordinates = await google_ocr(image)
         text_data= get_text(coordinates)
+        print(text_data)
+        
         save_ocr_data(db, request.input, text_data, False, client_ip, source_app, user_id)
 
         return {

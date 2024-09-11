@@ -70,9 +70,10 @@ def get_char_base_bboxes_and_avg_width(response):
 
 
 def build_page(bboxes, avg_char_width):
+    text_with_coordinates = []  # To store the text along with their coordinates
     text = ""
     if not bboxes:
-        return text
+        return text,text_with_coordinates
     sorted_bboxes = formatter.sort_bboxes(bboxes)
     bbox_lines = formatter.get_bbox_lines(sorted_bboxes)
     for bbox_line in bbox_lines:
@@ -82,16 +83,54 @@ def build_page(bboxes, avg_char_width):
             bbox_line = formatter.insert_space_bbox(bbox_line, avg_char_width)
         for bbox in bbox_line:
             text += bbox.text
+            coordinates = (bbox.x1, bbox.y1, bbox.x2, bbox.y2)
+            
+            text_with_coordinates.append((text, coordinates))
         text += "\n"
+        text_with_coordinates.append(("\n", None)) 
     text += "\n"
-    return text
+    return text,text_with_coordinates
 
 def get_text(ocr_object: OCRObject) -> Optional[str]:
     bboxes, avg_width = get_char_base_bboxes_and_avg_width(response=ocr_object)
     if bboxes is None:
         return None
-    text = build_page(bboxes, avg_width)
+     # A list to hold the text and coordinates
+   
+    text,text_with_coordinates = build_page(bboxes, avg_width)
+    ocr_data1=convert_to_google_ocr_format(text_with_coordinates)
+    print(ocr_object)
     return text
+
+
+def convert_to_google_ocr_format(text_with_coordinates):
+    google_ocr_output = []
+    
+    for entry in text_with_coordinates:
+        text, coordinates = entry
+        
+        # If the text is just a newline, skip it
+        if text == '\n':
+            continue
+        
+        # Create bounding box vertices from the coordinates
+        if coordinates:
+            x_min, y_min, x_max, y_max = coordinates
+            bounding_box = {
+                "boundingBox": {
+                    "vertices": [
+                        {"x": x_min, "y": y_min},
+                        {"x": x_max, "y": y_min},
+                        {"x": x_max, "y": y_max},
+                        {"x": x_min, "y": y_max}
+                    ]
+                },
+                "text": text
+            }
+            google_ocr_output.append(bounding_box)
+    
+    return google_ocr_output
+
 
 if __name__ == '__main__':
     print('started')
