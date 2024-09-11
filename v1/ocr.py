@@ -8,6 +8,8 @@ from v1.utils.utils import get_user_id
 from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_ocr
 from db import get_db
+from PIL import Image
+from io import BytesIO
 router = APIRouter()
 
 class Input(BaseModel):
@@ -19,6 +21,8 @@ class Input(BaseModel):
 async def check_ocr():
        image_url ="https://s3.ap-south-1.amazonaws.com/monlam.ai.website/OCR/input/1717734852871-IMG_7580.jpeg"
        buffer=await get_buffer(image_url)
+       image = Image.open(BytesIO(buffer))
+       width, height = image.size
        try:
         coordinates = await google_ocr(buffer)
         text_data = get_text(coordinates)
@@ -26,6 +30,9 @@ async def check_ocr():
             "success": True,
             "output": text_data,
             "responseTime": False,
+            "coordinates":coordinates,
+            "height":height,
+            "width":width
         }
     
        except Exception as e:
@@ -39,18 +46,20 @@ async def ocr(request: Input, client_request: Request):
        db = next(get_db())
        try:
         image_url=request.input
-        image=await get_buffer(image_url)
-        coordinates = await google_ocr(image)
-        text_data= get_text(coordinates)
-        print(text_data)
-        
-        save_ocr_data(db, request.input, text_data, False, client_ip, source_app, user_id)
+        buffer=await get_buffer(image_url)
+        image = Image.open(BytesIO(buffer))
+        width, height = image.size
+        coordinates = await google_ocr(buffer)
+        text= get_text(coordinates)
+        save_ocr_data(db, request.input, text, False, client_ip, source_app, user_id)
 
         return {
             "success": True,
-            "output": text_data,
+            "output": text,
             "coordinates":coordinates,
             "responseTime": False,
+            "height":height,
+            "width":width
          }
        except Exception as e:
         raise HTTPException(status_code=500, detail=f"ocr failed: {str(e)}")

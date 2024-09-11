@@ -32,17 +32,19 @@ async def translator(text: str, direction: str ):
     response_time = 0
     API_ERROR_MESSAGE = "error"
     word_count = count_words(text)
-    
+    isTibetan:bool=detect_language(text)==direction
+    if isTibetan:
+         return {"translation": text, "responseTime": 0}
    
     if word_count <= 3:
         translation = get_translation_from_file(text,direction)
         if translation:
            return {"translation": translation, "responseTime": response_time}
     
-    text_data = f"<2{direction}>{text}"
-    
+    text_data = f'<2{direction}>{text}'
     try:
         start_time = time.time()  # Record start time
+        
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url,

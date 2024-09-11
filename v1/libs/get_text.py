@@ -98,38 +98,9 @@ def get_text(ocr_object: OCRObject) -> Optional[str]:
      # A list to hold the text and coordinates
    
     text,text_with_coordinates = build_page(bboxes, avg_width)
-    ocr_data1=convert_to_google_ocr_format(text_with_coordinates)
-    print(ocr_object)
+    print(text_with_coordinates)
     return text
 
-
-def convert_to_google_ocr_format(text_with_coordinates):
-    google_ocr_output = []
-    
-    for entry in text_with_coordinates:
-        text, coordinates = entry
-        
-        # If the text is just a newline, skip it
-        if text == '\n':
-            continue
-        
-        # Create bounding box vertices from the coordinates
-        if coordinates:
-            x_min, y_min, x_max, y_max = coordinates
-            bounding_box = {
-                "boundingBox": {
-                    "vertices": [
-                        {"x": x_min, "y": y_min},
-                        {"x": x_max, "y": y_min},
-                        {"x": x_max, "y": y_max},
-                        {"x": x_min, "y": y_max}
-                    ]
-                },
-                "text": text
-            }
-            google_ocr_output.append(bounding_box)
-    
-    return google_ocr_output
 
 
 if __name__ == '__main__':
