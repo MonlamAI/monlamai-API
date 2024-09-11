@@ -35,11 +35,15 @@ def get_translation_from_file(search_key: str, direction:str) -> str:
         words = search_key.split()
         # Get the translation for each word
         translated_words = [translations.get(word,"") for word in words]
-        print(translated_words)
         # Join the translated words with spaces
         return ' '.join(translated_words)    
     
     except Exception as e:
         print(f"Error processing JSON file: {e}")
         return ''
-
+    
+if __name__ == "__main__": 
+         text="hi hello"
+         direction='bo'
+         data=get_translation_from_file(text,direction)
+         print(data)
