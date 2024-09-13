@@ -62,7 +62,7 @@ async def ocr(request: Input, client_request: Request):
             "width":width
          }
        except Exception as e:
-        raise HTTPException(status_code=500, detail=f"ocr failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="ocr failed from server")
 
 
 def save_ocr_data(db, input_text, file_url, response_time, client_ip, source_app, user_id):

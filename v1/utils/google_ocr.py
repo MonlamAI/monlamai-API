@@ -17,11 +17,9 @@ async def read_file_async(image_path):
 async def google_ocr(image, lang_hint=None):
     environment = os.getenv('ENV', 'development')
     # Load credentials
-    if environment == 'production':
-     path = '/etc/secrets/ocr_credentials.json'
-    else:
-     path = 'env/ocr_credentials.json'
-    credentials = service_account.Credentials.from_service_account_file(path)
+    credentials_path = '/etc/secrets/ocr_credentials.json' if environment == 'production' else 'env/ocr_credentials.json'
+    
+    credentials = service_account.Credentials.from_service_account_file(credentials_path)
 
     client = vision.ImageAnnotatorClient(credentials=credentials)
 
@@ -33,9 +31,7 @@ async def google_ocr(image, lang_hint=None):
     
     # Prepare the image content for the request
     ocr_image = vision.Image(content=content)
-    image_context = {}
-    if lang_hint:
-        image_context["language_hints"] = [lang_hint]
+    image_context = {"language_hints": [lang_hint]} if lang_hint else {}
     # Prepare the request
     features = [
         {
@@ -50,9 +46,8 @@ async def google_ocr(image, lang_hint=None):
         response = client.annotate_image({"image": ocr_image, "features": features, "image_context": image_context})
         # Convert the response to JSON using MessageToJson
         response_json = AnnotateImageResponse.to_json(response)
-        response = json.loads(response_json)
-        return response
+        return json.loads(response_json)
 
     except Exception as e:
-        print("Failed to perform OCR:", e)
-        raise e
+        print(f"Failed to perform OCR: {str(e)}")
+        raise RuntimeError("Failed to perform OCR")

@@ -52,8 +52,13 @@ def verify_and_parse_token(token: str) -> dict:
 
     
 def verify(token):
-    payload=verify_and_parse_token(token)
-    if payload:
-     db=next(get_db())
-     data=create_user(db,payload)
-    return data
+    try:  
+      payload=verify_and_parse_token(token)
+      if payload:
+        db=next(get_db())
+        data=create_user(db,payload)
+        return data
+    except ExpiredSignatureError:
+        return {"message": "token expired"}
+    except ValueError as e:
+        return {"message": str(e)}
