@@ -5,7 +5,7 @@ import uuid
 
 router = APIRouter()
 
-@router.post("/upload/")
+@router.post("/")
 async def upload_file(file: UploadFile = File(...)):
     try:
         # Generate a unique filename

@@ -3,7 +3,6 @@ import json
 import httpx
 from v1.utils.translator import headers
 import asyncio
-import aiohttp
 
 async def tibetan_synthesizer(text: str):
     """Synthesize text and return the audio data as a base64-encoded string."""
