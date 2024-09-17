@@ -19,19 +19,27 @@ def group_text_annotations(annotations: List[Dict], max_distance: float = 50) ->
     if not annotations:
         return []
 
-    groups = [[annotations[0]]]
-    for annotation in annotations[1:]:
+    groups = []
+    used_annotations = set()
+
+    for i, annotation in enumerate(annotations):
+        if i in used_annotations:
+            continue
+
+        current_group = [annotation]
+        used_annotations.add(i)
         box = get_bounding_box(annotation)
-        added_to_group = False
-        
-        for group in groups:
-            if any(distance(box, get_bounding_box(a)) <= max_distance for a in group):
-                group.append(annotation)
-                added_to_group = True
-                break
-        
-        if not added_to_group:
-            groups.append([annotation])
+
+        for j, other_annotation in enumerate(annotations[i+1:], start=i+1):
+            if j in used_annotations:
+                continue
+
+            other_box = get_bounding_box(other_annotation)
+            if distance(box, other_box) <= max_distance:
+                current_group.append(other_annotation)
+                used_annotations.add(j)
+
+        groups.append(current_group)
 
     return groups
 
@@ -60,4 +68,3 @@ def process_text_annotations(text_annotations: List[Dict]) -> List[Dict]:
         })
     
     return result
-
