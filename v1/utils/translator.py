@@ -2,16 +2,10 @@
 import os
 import httpx
 import json
-import asyncio
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from v1.utils.get_translation_from_file import get_translation_from_file,count_words
-from db import get_db
-from fastapi import Request
-from v1.model.create_inference import create_translation
 from v1.utils.language_detect import detect_language
-from v1.utils.utils import get_client_metadata
-
 import time
 
 
@@ -31,9 +25,10 @@ async def translator(text: str, direction: str ):
     received_data = ""
     response_time = 0
     API_ERROR_MESSAGE = "error"
-    word_count = count_words(text)
-    isTibetan:bool=detect_language(text)==direction
-    if isTibetan:
+    is_tibetan:bool=detect_language(text)==direction
+    word_count = count_words(text,is_tibetan)
+    
+    if is_tibetan:
          return {"translation": text, "responseTime": 0}
    
     if word_count <= 3:
@@ -78,8 +73,8 @@ async def translator_stream(text: str, direction: str, on_complete=None):
     start_time = time.time()
     url = f"{MT_MODEL_URL}/generate_stream"
      # Retrieve the Origin and Referer headers
-
-    word_count = count_words(text)
+    is_tibetan:bool=detect_language(text)==direction
+    word_count = count_words(text,is_tibetan)
     
     # If the text has two or fewer words, try to get the translation from the file
     if word_count <= 2:
@@ -93,7 +88,6 @@ async def translator_stream(text: str, direction: str, on_complete=None):
 
     # Define the event stream generator
     async def event_stream():
-        db=next(get_db())
         try:
             body = {
                 "inputs": text_data,
@@ -132,7 +126,9 @@ async def translator_stream(text: str, direction: str, on_complete=None):
             end_time = time.time()  # Capture the end time
             response_time = round((end_time - start_time) * 1000, 4)
             if on_complete:
-                await on_complete(generated_text, response_time)
+                if generated_text:
+                   await on_complete(generated_text or '', response_time)  # Use empty string if no generated_text
+
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

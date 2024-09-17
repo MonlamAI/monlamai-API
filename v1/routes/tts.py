@@ -1,16 +1,15 @@
-from fastapi import APIRouter, HTTPException,Request
+from fastapi import APIRouter, HTTPException,Request,Query
 from v1.utils.text_audio import tibetan_synthesizer
 from pydantic import BaseModel
 from v1.libs.upload_file_to_s3 import upload_file_to_s3
-from v1.libs.base64_to_file_buffer import base64_to_file_buffer
 from v1.model.create_inference import create_text_to_speech
 import uuid
-from db import get_db
 import time
 from v1.utils.utils import get_client_metadata
 from typing import Optional
 from v1.utils.utils import get_user_id
 from v1.libs.chunk_text import chunk_tibetan_text
+from v1.model.edit_inference import edit_inference
 from pydub import AudioSegment
 import base64
 import io
@@ -43,29 +42,53 @@ async def check_text_to_speech():
 @router.post("/")
 async def text_to_speech(request: Input, client_request: Request):
     token = request.id_token
-    user_id = get_user_id(token)
+    user_id =await get_user_id(token)
 
     try:
         chunked_text= chunk_tibetan_text(request.input)
         audio_data =await process_text_chunks(chunked_text)
-    
         file_url = await handle_audio_file(audio_data["audio"])
-
-        client_ip, source_app = get_client_metadata(client_request)
-
-        db = next(get_db())
+        client_ip, source_app,city,country = get_client_metadata(client_request)
         response_time = round(audio_data['response_time'] * 1000, 4)
-        save_tts_data(db, request.input, file_url, response_time, client_ip, source_app, user_id)
-
+        tts_data = {
+        "input": request.input,
+        "output": file_url,
+        "response_time": response_time,
+        "ip_address": client_ip,
+        "version": None,
+        "source_app": source_app,
+        "user_id": user_id,
+        "city": city,
+        "country": country,
+        }
+        data= await create_text_to_speech( tts_data)
+        
         # Return the result
         return {
             "success": True,
             "output": file_url,
+            "id": data.id,
             "responseTime": response_time,
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Audio failed: {str(e)}")
+
+
+
+@router.put("/{id}")
+async def update_ocr(id: int, action: str = Query(..., description="Action to perform: 'like', or 'dislike'")):
+
+    # Call the edit_inference function to update the record in ocr table
+    updated_record = await edit_inference('texttospeechs', id, action,None)
+
+    if not updated_record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    return {"message": f"Record {action}d successfully", "data": updated_record}
+
+
+
 
 
 async def handle_audio_file(base64_audio):
@@ -127,14 +150,3 @@ async def process_text_chunks(text_chunks):
         print(f"Error during audio merging: {str(e)}")
         raise
     
-def save_tts_data(db, input_text, file_url, response_time, client_ip, source_app, user_id):
-    tts_data = {
-        "input": input_text,
-        "output": file_url,
-        "response_time": response_time,
-        "ip_address": client_ip,
-        "version": None,
-        "source_app": source_app,
-        "user_id": user_id,
-    }
-    create_text_to_speech(db, tts_data)

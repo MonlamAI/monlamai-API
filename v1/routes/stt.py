@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException,Request
+from fastapi import APIRouter, HTTPException,Request,Query
 from v1.utils.speech_recognition import speech_to_text_tibetan,speech_to_text_english
 from v1.libs.get_buffer import get_buffer
 from v1.utils.whisper_stt import whisper_stt
 from pydantic import BaseModel
 from v1.utils.utils import get_user_id
-from db import get_db
 from typing import Optional
 from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_speech_to_text
+from v1.model.edit_inference import edit_inference
+import asyncio
+
 router = APIRouter()
 
 class Input(BaseModel):
@@ -34,18 +36,28 @@ async def check_speech_to_text():
 @router.post("/")
 async def speech_to_text_func(request:Input, client_request: Request):
        token = request.id_token
-       user_id = get_user_id(token)
+       user_id =await get_user_id(token)
        try:
         audio_url=request.input
         lang=request.lang
         audio=await get_buffer(audio_url)
-        client_ip, source_app = get_client_metadata(client_request)
+        client_ip, source_app,city,country = get_client_metadata(client_request)
         text_data, response_time = await transcribe_audio(audio, lang)
-        db = next(get_db())
-        save_stt_data(db, request.input, text_data, response_time, client_ip, source_app, user_id)
-
+        stt_data = {
+        "input": request.input,
+        "output": text_data,
+        "response_time": response_time,
+        "ip_address": client_ip,
+        "version": "wav2vec2_run10",
+        "source_app": source_app,
+        "user_id": user_id,
+        "city": city,
+        "country": country,
+        }
+        data= await create_speech_to_text(stt_data)
         return {
             "success": True,
+            "id":data.id,
             "output": text_data,
             "responseTime": response_time,
         }
@@ -54,18 +66,25 @@ async def speech_to_text_func(request:Input, client_request: Request):
         raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
 
 
-def save_stt_data(db, input, output, response_time, client_ip, source_app, user_id):
+
+@router.put("/{id}")
+async def update_speechtotext(id: int, action: str = Query(..., description="Action to perform: 'edit', 'like', or 'dislike'"), edit_text: str = None):
+    # Validate the action type
+    if action == 'edit' and not edit_text:
+        raise HTTPException(status_code=400, detail="Edit text must be provided for 'edit' action.")
+
+    # Call the edit_inference function to update the record in speechtotexts table
+    updated_record = await edit_inference('speechtotexts', id, action, edit_text)
+
+    if not updated_record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    return {"message": f"Record {action}d successfully", "data": updated_record}
+
+
+
+
     
-     stt_data = {
-        "input": input,
-        "output": output,
-        "response_time": response_time,
-        "ip_address": client_ip,
-        "version": None,
-        "source_app": source_app,
-        "user_id": user_id,
-     }
-     create_speech_to_text(db, stt_data)
 
 async def transcribe_audio(audio, lang):
     if lang and lang != 'bo':

@@ -1,23 +1,20 @@
-from db import get_db
-from models import Users
-from sqlalchemy.orm import Session
+from v1.Config.Connection import db,prisma_connection
 
-def get_user_by_email(db:Session,email: str):
+async def get_user_by_email(email: str):
     # Manually retrieve the session object
-        user = db.query(Users).filter(Users.email == email).first()
+        user = await db.user.find_unique(
+               where={'email': email}
+                )
         return user
    
 
-def create_user(db:Session,user_data: dict):
-        user = get_user_by_email(db,user_data['email'])
+async def create_user(user_data: dict):
+        user =await get_user_by_email(user_data['email'])
         if not user:
-            db_user = Users(
-                email=user_data['email'],
-                username=user_data['name'],
-                picture=user_data['picture'],
-            )
-            db.add(db_user)
-            db.commit()
-            db.refresh(db_user)
-            return db_user.id
+            user = await db.user.create(
+            {'email': user_data['email'],
+             'username': user_data['name'],
+             'picture': user_data['picture']
+             }
+             )
         return user.id

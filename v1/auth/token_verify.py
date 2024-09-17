@@ -3,7 +3,6 @@ import requests
 import os
 from v1.model.user import create_user
 from jwt import ExpiredSignatureError, InvalidTokenError, DecodeError
-from db import get_db
 
 
 def get_public_key(auth0_domain: str, kid: str) -> dict:
@@ -51,12 +50,11 @@ def verify_and_parse_token(token: str) -> dict:
 
 
     
-def verify(token):
+async def verify(token):
     try:  
       payload=verify_and_parse_token(token)
       if payload:
-        db=next(get_db())
-        data=create_user(db,payload)
+        data=await create_user(payload)
         return data
     except ExpiredSignatureError:
         return {"message": "token expired"}

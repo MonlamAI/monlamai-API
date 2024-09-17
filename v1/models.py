@@ -1,0 +1,103 @@
+from pydantic import BaseModel
+from datetime import datetime
+from enum import Enum
+from typing import Optional, List
+
+class UserRole(str, Enum):
+    Admin = "Admin"
+    User = "User"
+    Subscriber = "Subscriber"
+
+class User(BaseModel):
+    id: int
+    username: str
+    email: str
+    picture: Optional[str]
+    role: UserRole
+    createdAt: datetime
+
+    translations: List['Translation'] = []
+    speechToTexts: List['SpeechToTexts'] = []
+    textToSpeechs: List['TextToSpeech'] = []
+    ocrs: List['OCR'] = []
+
+    likedTranslations: List['Translation'] = []
+    likedSpeechToTexts: List['SpeechToTexts'] = []
+    likedTextToSpeechs: List['TextToSpeech'] = []
+    likedOcrs: List['OCR'] = []
+
+class Translation(BaseModel):
+    id: int
+    input: str
+    output: str
+    inputLang: str
+    outputLang: str
+    responseTime: str
+    ipAddress: str
+    version: Optional[str]
+    sourceApp: Optional[str]
+    createdAt: datetime
+    city: Optional[str]
+    country: Optional[str]
+    editOutput: Optional[str]
+
+    userId: Optional[int]
+    user: Optional[User]
+    likedByUsers: List[User] = []
+
+class SpeechToTexts(BaseModel):
+    id: int
+    input: str
+    output: str
+    responseTime: str
+    ipAddress: str
+    version: Optional[str]
+    sourceApp: Optional[str]
+    createdAt: datetime
+    city: Optional[str]
+    country: Optional[str]
+    editOutput: Optional[str]
+
+    userId: Optional[int]
+    user: Optional[User]
+    likedByUsers: List[User] = []
+
+class TextToSpeech(BaseModel):
+    id: int
+    input: str
+    output: str
+    responseTime: str
+    ipAddress: str
+    version: Optional[str]
+    sourceApp: Optional[str]
+    createdAt: datetime
+    city: Optional[str]
+    country: Optional[str]
+
+    userId: Optional[int]
+    user: Optional[User]
+    likedByUsers: List[User] = []
+
+class OCR(BaseModel):
+    id: int
+    input: str
+    output: str
+    responseTime: str
+    ipAddress: str
+    version: Optional[str]
+    sourceApp: Optional[str]
+    createdAt: datetime
+    city: Optional[str]
+    country: Optional[str]
+    editOutput: Optional[str]
+
+    userId: Optional[int]
+    user: Optional[User]
+    likedByUsers: List[User] = []
+
+# Resolve forward references
+User.update_forward_refs()
+Translation.update_forward_refs()
+SpeechToTexts.update_forward_refs()
+TextToSpeech.update_forward_refs()
+OCR.update_forward_refs()

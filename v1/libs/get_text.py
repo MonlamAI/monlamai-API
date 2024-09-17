@@ -98,7 +98,6 @@ def get_text(ocr_object: OCRObject) -> Optional[str]:
      # A list to hold the text and coordinates
    
     text,text_with_coordinates = build_page(bboxes, avg_width)
-    print(text_with_coordinates)
     return text
 
 

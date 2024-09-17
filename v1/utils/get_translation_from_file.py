@@ -1,11 +1,14 @@
 
 import ijson
-import json
 import re
 
-def count_words(text: str) -> int:
-    # Use a regex to match words considering Tibetan characters
-    words = re.findall(r'\b\w+\b', text)
+def count_words(text: str, isTibetan: bool) -> int:
+    if isTibetan:
+        # Tibetan word count (example regex, adjust as per actual Tibetan word structure)
+        words = re.findall(r'[\u0F00-\u0FFF]+', text)
+    else:
+        # English word count
+        words = re.findall(r'\b\w+\b', text)
     return len(words)
 
 

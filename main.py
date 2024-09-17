@@ -2,12 +2,11 @@
 
 from fastapi import FastAPI, Depends,Request
 from fastapi.middleware.cors import CORSMiddleware
-from v1.translation import router as translationRoute
-from v1.tts import router as ttsRoute
-from v1.stt import router as sttRoute
-from v1.ocr import router as ocrRoute
-from v1.s3 import router as s3Route
-import models 
+from v1.routes.translation import router as translationRoute
+from v1.routes.tts import router as ttsRoute
+from v1.routes.stt import router as sttRoute
+from v1.routes.ocr import router as ocrRoute
+from v1.routes.s3 import router as s3Route
 import uvicorn
 from v1.auth.auth_handler import verify_token 
 import os 
@@ -17,8 +16,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
-from db import engine
 from dotenv import load_dotenv
+from v1.Config.Connection import prisma_connection
 
 load_dotenv(override=True)
 
@@ -31,12 +30,15 @@ description = """
 
 """
 limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+
+
+
+
 app = FastAPI(
     title="Monlam API",
     description=description,
     summary="do not use without proper permissions",
     version="0.0.1",
-    # terms_of_service="http://example.com/terms/",
     contact={
         "name": "monlam API service",
         "url": "https://monlam.ai",
@@ -48,7 +50,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # database connection
-models.Base.metadata.create_all(bind=engine)
 
 
 app.add_middleware(
@@ -58,6 +59,15 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
 )
+
+
+@app.on_event("startup")
+async def startup():
+    await prisma_connection.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await prisma_connection.disconnect()
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -75,6 +85,7 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to API v1"}
@@ -85,6 +96,8 @@ app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_
 app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_token)],tags=["speech to text"])
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)],tags=["text to speech"])
 app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verify_token)],tags=["file upload"])
+
+
 
 
 def get_port():
