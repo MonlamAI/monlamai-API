@@ -57,8 +57,7 @@ async def create_text_to_speech( tts_data: dict) -> TextToSpeech:
     return text_to_speech
 
 async def create_ocr(ocr_data: dict) -> OCR:
-    
-    ocr = await db.ocr.create(
+    return await db.ocr.create(
         data={
             'input': ocr_data['input'],
             'output': ocr_data['output'],
@@ -71,4 +70,3 @@ async def create_ocr(ocr_data: dict) -> OCR:
             'country': ocr_data.get('country'),
         }
     )
-    return ocr

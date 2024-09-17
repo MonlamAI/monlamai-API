@@ -61,17 +61,3 @@ def process_text_annotations(text_annotations: List[Dict]) -> List[Dict]:
     
     return result
 
-# Example usage
-example_annotations = [
-    {'description': 'Hello', 'boundingPoly': {'vertices': [{'x': 10, 'y': 10}, {'x': 50, 'y': 10}, {'x': 50, 'y': 30}, {'x': 10, 'y': 30}]}},
-    {'description': 'World', 'boundingPoly': {'vertices': [{'x': 60, 'y': 10}, {'x': 100, 'y': 10}, {'x': 100, 'y': 30}, {'x': 60, 'y': 30}]}},
-    {'description': '!', 'boundingPoly': {'vertices': [{'x': 110, 'y': 10}, {'x': 120, 'y': 10}, {'x': 120, 'y': 30}, {'x': 110, 'y': 30}]}},
-    {'description': 'New', 'boundingPoly': {'vertices': [{'x': 10, 'y': 50}, {'x': 50, 'y': 50}, {'x': 50, 'y': 70}, {'x': 10, 'y': 70}]}},
-    {'description': 'Line', 'boundingPoly': {'vertices': [{'x': 60, 'y': 50}, {'x': 100, 'y': 50}, {'x': 100, 'y': 70}, {'x': 60, 'y': 70}]}}
-]
-
-grouped_results = process_text_annotations(example_annotations)
-for result in grouped_results:
-    print(f"Text: {result['text']}")
-    print(f"Bounding Box: {result['boundingBox']}")
-    print()
