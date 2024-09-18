@@ -5,23 +5,22 @@ from v1.Config.Connection import db,prisma_connection
 
 async def create_translation( translation_data: dict) -> Translation:
    
-    translation = await db.translation.create(
-        data={
-            'id': translation_data['id'],
-            'input': translation_data['input'],
-            'output': translation_data['output'],
-            'inputLang': translation_data['input_lang'],
-            'outputLang': translation_data['output_lang'],
-            'responseTime': str(round(translation_data['response_time'])),
-            'ipAddress': translation_data.get('ip_address'),
-            'version': translation_data.get('version'),
-            'sourceApp': translation_data.get('source_app'),
-            'userId': translation_data.get('user_id'),
-            'city': translation_data.get('city'),
-            'country': translation_data.get('country'),
-            
-        }
-    )
+    data = {
+        'input': translation_data['input'],
+        'output': translation_data['output'],
+        'inputLang': translation_data['input_lang'],
+        'outputLang': translation_data['output_lang'],
+        'responseTime': str(round(translation_data['response_time'])),
+        'ipAddress': translation_data.get('ip_address'),
+        'version': translation_data.get('version'),
+        'sourceApp': translation_data.get('source_app'),
+        'userId': translation_data.get('user_id'),
+        'city': translation_data.get('city'),
+        'country': translation_data.get('country'),
+    }
+    if 'id' in translation_data:
+        data['id'] = translation_data['id']
+    translation = await db.translation.create(data=data)
     return translation
 
 async def create_speech_to_text( speech_data: dict) -> SpeechToTexts:
