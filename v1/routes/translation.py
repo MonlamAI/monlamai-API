@@ -50,7 +50,7 @@ async def translate(request:Input, client_request: Request):
         
         input_lang = detect_language(request.input) or ""
         client_ip, source_app, city,country = get_client_metadata(client_request)
-        translation_data = {"id":inference_id,
+        translation_data = {
                             "input": request.input, 
                             "output": translated['translation'],  
                             "input_lang": input_lang, 
@@ -63,6 +63,8 @@ async def translate(request:Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
+        if inference_id:
+            translation_data["id"] = inference_id
         asyncio.create_task(create_translation(translation_data))
         
         return {
@@ -91,7 +93,6 @@ async def stream_translate(request: Input, client_request: Request):
                  input_lang = detect_language(request.input)
                  client_ip, source_app, city, country = get_client_metadata(client_request)
                  translation_data = {
-                            "id":inference_id,
                             "input": request.input, 
                             "output": generated_text,  
                             "input_lang": input_lang, 
@@ -104,6 +105,8 @@ async def stream_translate(request: Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
+                 if inference_id:
+                           translation_data["id"] = inference_id
                  asyncio.create_task(create_translation(translation_data))
                  
         # Await the streaming translation with the on_complete callback
