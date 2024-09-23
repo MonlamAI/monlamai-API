@@ -52,13 +52,15 @@ async def ocr(request: Input, client_request: Request):
         image_url=request.input
         buffer=await get_buffer(image_url)
         image = Image.open(BytesIO(buffer))
-        coordinates = await google_ocr(buffer)
+        image = ImageOps.exif_transpose(image)
+        coordinates = await google_ocr(image)
         if len(coordinates['textAnnotations']) == 0:
             raise HTTPException(status_code=400, detail="No text found in the image")
         text= get_text(coordinates)
         parse_coordinates=process_text_annotations(coordinates['textAnnotations'])
-        image = ImageOps.exif_transpose(image)
+       
         width, height = image.size
+        print(image_url)
         ocr_data = {
         "input": request.input,
         "output": text,

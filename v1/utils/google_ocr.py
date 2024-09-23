@@ -4,7 +4,8 @@ from google.oauth2 import service_account
 from google.protobuf.json_format import MessageToJson
 from google.cloud.vision import AnnotateImageResponse
 import os
-
+import io
+from PIL import Image
 def is_png(image_data):
     return image_data[:8] == b'\x89PNG\r\n\x1a\n'
 
@@ -26,9 +27,13 @@ async def google_ocr(image, lang_hint=None):
     # Check if the image is a file path or already in bytes
     if isinstance(image, str):
         content = await read_file_async(image)
+    elif isinstance(image, Image.Image):
+        # Convert PIL Image to bytes
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='PNG')
+        content = img_byte_arr.getvalue()
     else:
         content = image
-    
     # Prepare the image content for the request
     ocr_image = vision.Image(content=content)
     image_context = {"language_hints": [lang_hint]} if lang_hint else {}
