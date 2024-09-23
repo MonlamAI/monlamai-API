@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from v1.utils.get_translation_from_file import get_translation_from_file,count_words
 from v1.utils.language_detect import detect_language
 import time
-
+import re
 
 load_dotenv()
 MODEL_AUTH = os.getenv('MODEL_AUTH')
@@ -18,7 +18,18 @@ headers = {
         "Access-Control-Allow-Origin": "*",
     }
 
-
+def clean_text(original_text):
+    # Remove unwanted trailing text
+    cleaned_text = re.sub(r'\s*what to do GARCÍA past , present , and and my\s*$', '', original_text)
+    
+    # Normalize whitespace
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
+    
+    # Strip leading and trailing whitespace
+    cleaned_text = cleaned_text.strip()
+    
+    return cleaned_text
+    
 
 async def translator(text: str, direction: str ):
     url = MT_MODEL_URL
@@ -30,13 +41,12 @@ async def translator(text: str, direction: str ):
     
     if is_tibetan:
          return {"translation": text, "responseTime": 0}
-   
     if word_count <= 3:
         translation = get_translation_from_file(text,direction)
-        if translation:
+        if translation and translation.strip():
            return {"translation": translation, "responseTime": response_time}
     
-    text_data = f'<2{direction}>{text}'
+    text_data = clean_text(f'<2{direction}>{text}')
     try:
         start_time = time.time()  # Record start time
         
@@ -69,7 +79,7 @@ async def translator(text: str, direction: str ):
 
 async def translator_stream(text: str, direction: str, on_complete=None):
     # Retrieve environment variables
-    text_data = f"<2{direction}>{text}"
+    text_data =clean_text(f'<2{direction}>{text}')
     start_time = time.time()
     url = f"{MT_MODEL_URL}/generate_stream"
      # Retrieve the Origin and Referer headers
@@ -79,7 +89,7 @@ async def translator_stream(text: str, direction: str, on_complete=None):
     # If the text has two or fewer words, try to get the translation from the file
     if word_count <= 2:
         translation = get_translation_from_file(text, direction)
-        if translation:  # Only stream if a translation is found
+        if translation and translation.strip():  # Only stream if a translation is found
             async def short_event_stream():
                 yield f"data: {json.dumps({'generated_text': translation})}\n\n"
                 if on_complete:

@@ -12,6 +12,8 @@ from PIL import Image
 from io import BytesIO
 from v1.libs.ocr_parse import process_text_annotations
 import asyncio
+from v1.utils.get_id_token import get_id_token
+from PIL import ImageOps
 router = APIRouter()
 
 class Input(BaseModel):
@@ -43,13 +45,15 @@ async def check_ocr():
 
 @router.post("/")
 async def ocr(request: Input, client_request: Request):
-       token = request.id_token
+       token = get_id_token(client_request)
        user_id =await get_user_id(token)
        client_ip, source_app,city,country = get_client_metadata(client_request)
        try:
         image_url=request.input
         buffer=await get_buffer(image_url)
         image = Image.open(BytesIO(buffer))
+        image = ImageOps.exif_transpose(image)
+        print(image)
         width, height = image.size
         coordinates = await google_ocr(buffer)
         if len(coordinates['textAnnotations']) == 0:

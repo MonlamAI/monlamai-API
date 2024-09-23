@@ -11,6 +11,7 @@ from v1.utils.utils import get_user_id
 from v1.libs.chunk_text import chunk_tibetan_text
 from v1.model.edit_inference import edit_inference
 from pydub import AudioSegment
+from v1.utils.get_id_token import get_id_token
 import base64
 import io
 import asyncio
@@ -41,7 +42,7 @@ async def check_text_to_speech():
 
 @router.post("/")
 async def text_to_speech(request: Input, client_request: Request):
-    token = request.id_token
+    token=get_id_token(client_request)
     user_id =await get_user_id(token)
 
     try:

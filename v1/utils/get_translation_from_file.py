@@ -1,15 +1,16 @@
 
 import ijson
 import re
-
+from v1.libs.segment_tibetan_text import segment_tibetan_text 
 def count_words(text: str, isTibetan: bool) -> int:
     if isTibetan:
         # Tibetan word count (example regex, adjust as per actual Tibetan word structure)
-        words = re.findall(r'[\u0F00-\u0FFF]+', text)
+        segmented_text = segment_tibetan_text(text)
+        return len(segmented_text.segments)
     else:
         # English word count
         words = re.findall(r'\b\w+\b', text)
-    return len(words)
+        return len(words)
 
 
 def get_translation_from_file(search_key: str, direction:str) -> str:
@@ -45,8 +46,3 @@ def get_translation_from_file(search_key: str, direction:str) -> str:
         print(f"Error processing JSON file: {e}")
         return ''
     
-if __name__ == "__main__": 
-         text="hi hello"
-         direction='bo'
-         data=get_translation_from_file(text,direction)
-         print(data)

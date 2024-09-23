@@ -1,13 +1,15 @@
 def detect_language(text: str) -> str:
     """
     Detect the language of the given text based on its Unicode characters.
+    Returns the language that has the most frequent characters.
+    
     Returns:
       - 'bo' for Tibetan
       - 'en' for English (default)
       - 'zh' for Chinese
       - 'fr' for French
       - 'unknown' if no known language is detected
-    
+
     :param text: The text whose language needs to be detected.
     :return: The language code of the detected language.
     """
@@ -38,14 +40,12 @@ def detect_language(text: str) -> str:
         elif french_range[0] <= code_point <= french_range[1]:
             language_counts['fr'] += 1
 
-        # English (Basic Latin) is implicitly handled by default
+        # English (Basic Latin) range
+        elif 'a' <= char <= 'z' or 'A' <= char <= 'Z':
+            language_counts['en'] += 1
 
     # Determine the language with the highest count
     detected_language = max(language_counts, key=language_counts.get)
 
-    # Return the detected language or default to 'en'
-    return detected_language if language_counts[detected_language] > 0 else 'en'
-    
-if __name__ == "__main__":
-        re=detect_language('ཁམས་བཟང་། ཁམས་བཟང་།')
-        print(re)
+    # Return the detected language if at least one character is counted; otherwise return 'unknown'
+    return detected_language if language_counts[detected_language] > 0 else 'unknown'

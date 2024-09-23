@@ -9,7 +9,7 @@ from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_speech_to_text
 from v1.model.edit_inference import edit_inference
 import asyncio
-
+from v1.utils.get_id_token import get_id_token
 router = APIRouter()
 
 class Input(BaseModel):
@@ -35,7 +35,7 @@ async def check_speech_to_text():
 
 @router.post("/")
 async def speech_to_text_func(request:Input, client_request: Request):
-       token = request.id_token
+       token = get_id_token(client_request)
        user_id =await get_user_id(token)
        try:
         audio_url=request.input

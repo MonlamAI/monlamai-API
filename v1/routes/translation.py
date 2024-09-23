@@ -10,14 +10,16 @@ from v1.utils.utils import get_client_metadata
 from v1.utils.utils import get_user_id
 import asyncio
 from v1.model.edit_inference import edit_inference
+from v1.utils.get_id_token import get_id_token
+import json
 router = APIRouter()
 
 class Input(BaseModel):
     input: str
     target: str
-    id_token: Optional[str] = None
     inference_id: Optional[str] = None
     
+
 
 @router.get("/")
 async def check_translation():
@@ -40,10 +42,9 @@ async def check_translation():
 @router.post("/")
 
 async def translate(request:Input, client_request: Request):
-    token=request.id_token
+    token=get_id_token(client_request)
     user_id =await get_user_id(token)
     inference_id = request.inference_id
-    
     try:
         translated = await translator(request.input, request.target)
         # save translations
@@ -79,7 +80,7 @@ async def translate(request:Input, client_request: Request):
 
 @router.post("/stream")
 async def stream_translate(request: Input, client_request: Request):
-    token = request.id_token
+    token = get_id_token(client_request)
     user_id = await get_user_id(token)
     inference_id = request.inference_id
     if not request.input or not request.target:
@@ -111,7 +112,7 @@ async def stream_translate(request: Input, client_request: Request):
                  
         # Await the streaming translation with the on_complete callback
         translated = await translator_stream(
-            request.input, 
+           request.input, 
             request.target,
             on_complete=on_complete  # Pass the async function
         )
