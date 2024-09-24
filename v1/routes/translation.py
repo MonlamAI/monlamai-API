@@ -11,13 +11,13 @@ from v1.utils.utils import get_user_id
 import asyncio
 from v1.model.edit_inference import edit_inference
 from v1.utils.get_id_token import get_id_token
-import json
+import uuid
+from v1.libs.chunk_text import chunk_tibetan_text
 router = APIRouter()
 
 class Input(BaseModel):
     input: str
     target: str
-    inference_id: Optional[str] = None
     
 
 
@@ -44,16 +44,22 @@ async def check_translation():
 async def translate(request:Input, client_request: Request):
     token=get_id_token(client_request)
     user_id =await get_user_id(token)
-    inference_id = request.inference_id
+    inference_id = str(uuid.uuid4())
+    lang=detect_language(request.input)
     try:
-        translated = await translator(request.input, request.target)
+        chunked_text= chunk_text(request.input,lang,50)
+        translated_text=""
+        for text in chunked_text:
+           translated = await translator(text, request.target)
+           print(translated)
+           translated_text+=translated['translation']
         # save translations
         
         input_lang = detect_language(request.input) or ""
         client_ip, source_app, city,country = get_client_metadata(client_request)
         translation_data = {
                             "input": request.input, 
-                            "output": translated['translation'],  
+                            "output": translated_text,  
                             "input_lang": input_lang, 
                             "output_lang": request.target, 
                             "response_time": translated['responseTime'],  
@@ -70,7 +76,8 @@ async def translate(request:Input, client_request: Request):
         
         return {
             "success": True,
-            "translation": translated['translation'],
+            "id":inference_id,
+            "translation": translated_text,
             "responseTime": translated['responseTime'],
         }
     
@@ -82,7 +89,7 @@ async def translate(request:Input, client_request: Request):
 async def stream_translate(request: Input, client_request: Request):
     token = get_id_token(client_request)
     user_id = await get_user_id(token)
-    inference_id = request.inference_id
+    inference_id =  str(uuid.uuid4())
     if not request.input or not request.target:
         raise HTTPException(status_code=400, detail="Missing input or target field.")
 
@@ -107,13 +114,14 @@ async def stream_translate(request: Input, client_request: Request):
                             "country": country,
                             }
                  if inference_id:
-                           translation_data["id"] = inference_id
+                           translation_data["id"] =inference_id
                  asyncio.create_task(create_translation(translation_data))
                  
         # Await the streaming translation with the on_complete callback
         translated = await translator_stream(
-           request.input, 
+            request.input, 
             request.target,
+            inference_id,  # Pass the inference ID
             on_complete=on_complete  # Pass the async function
         )
         
@@ -143,4 +151,22 @@ async def update_translation(
     return {"message": f"Translation {action}d successfully", "data": updated_translation}
 
 
+def chunk_text(text, lang, max=200):
+    if lang == "bo":
+        return chunk_tibetan_text(text, max)
+    
+    words = text.split(' ')
+    chunks = []
+    current_chunk = []
 
+    for word in words:
+        current_chunk.append(word)
+        if len(current_chunk) >= max:
+            chunks.append(' '.join(current_chunk))
+            current_chunk = []
+
+    # Add any remaining words as the last chunk
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+
+    return chunks

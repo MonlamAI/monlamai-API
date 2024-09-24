@@ -19,8 +19,11 @@ headers = {
     }
 
 def clean_text(original_text):
-    # Remove unwanted trailing text
-    cleaned_text = re.sub(r'\s*what to do GARCÍA past , present , and and my\s*$', '', original_text)
+    # Replace the escape sequence for single quotes with just a single quote
+    cleaned_text = original_text.replace("\\'", "'")
+    
+    # Remove unwanted trailing text (customize this pattern based on actual needs)
+    cleaned_text = re.sub(r'\s*what to do GARCÍA past , present , and and my\s*$', '', cleaned_text)
     
     # Normalize whitespace
     cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
@@ -77,7 +80,7 @@ async def translator(text: str, direction: str ):
     return {"translation": translation, "responseTime": response_time}
 
 
-async def translator_stream(text: str, direction: str, on_complete=None):
+async def translator_stream(text: str, direction: str,inferenceID, on_complete=None):
     # Retrieve environment variables
     text_data =clean_text(f'<2{direction}>{text}')
     start_time = time.time()
@@ -91,7 +94,7 @@ async def translator_stream(text: str, direction: str, on_complete=None):
         translation = get_translation_from_file(text, direction)
         if translation and translation.strip():  # Only stream if a translation is found
             async def short_event_stream():
-                yield f"data: {json.dumps({'generated_text': translation})}\n\n"
+                yield f"data: {json.dumps({'generated_text': translation,'id':inferenceID})}\n\n"
                 if on_complete:
                     await on_complete(translation, 0)
             return StreamingResponse(short_event_stream(), media_type="text/event-stream")
@@ -123,11 +126,11 @@ async def translator_stream(text: str, direction: str, on_complete=None):
                                 generated_text = parsed_data.get("generated_text")
                                
                                 if text_value:
-                                    yield f"data: {json.dumps({'text': text_value})}\n\n"
+                                    yield f"data: {json.dumps({'text': text_value,'id':inferenceID})}\n\n"
 
                                 # Yield the generated text as an SSE event and end the stream
                                 if generated_text:
-                                    yield f"data: {json.dumps({'generated_text': generated_text})}\n\n"
+                                    yield f"data: {json.dumps({'generated_text': generated_text,'id':inferenceID})}\n\n"
                                     return
         except Exception as e:
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
