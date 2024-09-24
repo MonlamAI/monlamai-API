@@ -16,8 +16,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
-from dotenv import load_dotenv
 from v1.Config.Connection import prisma_connection
+from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
