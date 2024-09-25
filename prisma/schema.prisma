@@ -13,15 +13,25 @@ enum UserRole {
     User
     Subscriber
 }
+enum Gender{
+    Male
+    Female
+    Other
+}
 
 model User {
-    id        Int      @id @default(autoincrement())
-    username  String
-    email     String   @unique
-    picture   String?
-    role      UserRole @default(User)
-    createdAt DateTime @default(now())
-
+    id            Int      @id @default(autoincrement())
+    username      String
+    email         String   @unique
+    picture       String?
+    role          UserRole @default(User)
+    createdAt     DateTime @default(now())
+    profession    String?
+    interest      String?
+    birth_date    DateTime?
+    gender        Gender?   
+    city          String?
+    country       String?
     translations  Translation[]   @relation("UserTranslations")
     speechToTexts SpeechToTexts[] @relation("UserSpeechToTexts")
     textToSpeechs TextToSpeech[]  @relation("UserTextToSpeechs")

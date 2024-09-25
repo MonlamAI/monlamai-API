@@ -8,6 +8,11 @@ class UserRole(str, Enum):
     User = "User"
     Subscriber = "Subscriber"
 
+class Gender(str, Enum):
+    Male = "Male"
+    Female = "Female"
+    Other = "Other"
+
 class User(BaseModel):
     id: int
     username: str
@@ -15,6 +20,12 @@ class User(BaseModel):
     picture: Optional[str]
     role: UserRole
     createdAt: datetime
+    profession: Optional[str] = None
+    interest: Optional[str] = None
+    birth_date: Optional[datetime] = None
+    gender: Optional[Gender] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
 
     translations: List['Translation'] = []
     speechToTexts: List['SpeechToTexts'] = []
