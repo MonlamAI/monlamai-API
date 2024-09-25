@@ -1,4 +1,3 @@
-import pytest
 from v1.utils.get_translation_from_file import get_translation_from_file
 
 

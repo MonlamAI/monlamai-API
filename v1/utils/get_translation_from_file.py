@@ -19,10 +19,8 @@ def get_translation_from_file(search_key: str, direction:str) -> str:
     try:
         # Open the file for streaming
         with open(DICTIONARY_FILE_PATH, 'r', encoding='utf-8') as file:
-            # Use ijson to parse the file incrementally
             parser = ijson.parse(file)
             
-            # Create a dictionary to hold the translations
             translations = {}
             current_key = None
             
