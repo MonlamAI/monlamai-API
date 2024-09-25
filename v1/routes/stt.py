@@ -1,14 +1,12 @@
 from fastapi import APIRouter, HTTPException,Request,Query
 from v1.utils.speech_recognition import speech_to_text_tibetan,speech_to_text_english
 from v1.libs.get_buffer import get_buffer
-from v1.utils.whisper_stt import whisper_stt
 from pydantic import BaseModel
 from v1.utils.utils import get_user_id
 from typing import Optional
 from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_speech_to_text
 from v1.model.edit_inference import edit_inference
-import asyncio
 from v1.utils.get_id_token import get_id_token
 router = APIRouter()
 

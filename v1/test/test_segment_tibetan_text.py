@@ -37,7 +37,6 @@ class TestSegmentTibetanText(unittest.TestCase):
     def test_segment_tibetan_text_basic(self):
         text = "བོད་། བོད་།"
         segmented = segment_tibetan_text(text)
-        print(segmented)
         expected_segments = [
             TextSegment(0, "བོད"),
             TextSegment(3, "་"),
@@ -70,7 +69,6 @@ class TestSegmentTibetanText(unittest.TestCase):
     def test_segment_tibetan_text_with_newline(self):
         text = "བོད་\nམི་"
         segmented = segment_tibetan_text(text)
-        print(segmented)
         expected_segments = [
             TextSegment(0, "བོད"),
             TextSegment(3, "་"),

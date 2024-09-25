@@ -59,7 +59,6 @@ async def ocr(request: Input, client_request: Request):
         parse_coordinates=process_text_annotations(coordinates['textAnnotations'])
        
         width, height = image.size
-        print(image_url)
         ocr_data = {
         "input": request.input,
         "output": text,

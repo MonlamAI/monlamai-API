@@ -54,7 +54,6 @@ async def speech_to_text_english(audio:str) -> dict:
     
     try:
         start_time = asyncio.get_event_loop().time()  # Record start time
-        print(audio)
         async with httpx.AsyncClient() as client:
             response = await client.post(api_url, headers=headers, content=audio)
             data = response.json()

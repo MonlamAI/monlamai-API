@@ -103,8 +103,6 @@ def get_text(ocr_object: OCRObject) -> Optional[str]:
 
 
 if __name__ == '__main__':
-    print('started')
     with open('v1/ocr_sample.json', 'r', encoding='utf-8') as file:
         ocr_data = json.load(file)  # Load JSON data from the file
     result_text = get_text(ocr_data)
-    print(result_text)

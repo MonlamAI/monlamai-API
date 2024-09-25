@@ -51,7 +51,6 @@ async def translate(request:Input, client_request: Request):
         translated_text=""
         for text in chunked_text:
            translated = await translator(text, request.target)
-           print(translated)
            translated_text+=translated['translation']
         # save translations
         
@@ -114,7 +113,6 @@ async def stream_translate(request: Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
-                 print(translation_data)
                  asyncio.create_task(create_translation(translation_data))
                  
         # Await the streaming translation with the on_complete callback

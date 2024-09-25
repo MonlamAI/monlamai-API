@@ -41,7 +41,6 @@ async def upload_file_to_s3(file: Any, content_type: str, filename: str) -> str:
 async def main():
     with open('v1/ocr_sample.json', 'rb') as file:
         file_url = await upload_file_to_s3(file, 'text/plain', 'example.json')
-        print(f"{file_url}")
 
 if __name__ == "__main__":
     asyncio.run(main())
