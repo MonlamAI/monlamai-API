@@ -19,7 +19,6 @@ import asyncio
 router = APIRouter()
 class Input(BaseModel):
     input: str
-    id_token:Optional[str] = None
 
  
 
@@ -99,23 +98,23 @@ async def handle_audio_file(base64_audio):
     file_url = await upload_file_to_s3(audio_file, "audio/wav", file_name)
     return file_url
 
-async def process_text_chunks(text_chunks):
+async def process_text_chunks(text_chunks, volume_increase_db=20):
     audio_chunks = []
     response_time = 0
     start_time = asyncio.get_event_loop().time()  # Record start time
     for i, chunk in enumerate(text_chunks):
         try:
-            amplified_audio_string = await tibetan_synthesizer(chunk)
-            if isinstance(amplified_audio_string, dict) and 'audio' in amplified_audio_string:
+            audio_string = await tibetan_synthesizer(chunk)
+            if isinstance(audio_string, dict) and 'audio' in audio_string:
                 # Decode the base64-encoded audio string
-                audio_data = base64.b64decode(amplified_audio_string['audio'])
+                audio_data = base64.b64decode(audio_string['audio'])
 
                 # Load the audio segment from the decoded audio data
                 audio_segment = AudioSegment.from_file(io.BytesIO(audio_data), format="wav")
 
                 # Ensure the audio segment has the correct format
                 audio_segment = audio_segment.set_frame_rate(44100).set_channels(1).set_sample_width(2)
-
+                audio_segment = audio_segment + volume_increase_db
                 # Append the audio segment to the list
                 audio_chunks.append(audio_segment)
             else:

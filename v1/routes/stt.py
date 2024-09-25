@@ -15,7 +15,6 @@ router = APIRouter()
 class Input(BaseModel):
     input: str
     lang: Optional[str] = None
-    id_token:Optional[str] = None
 
 @router.get("/")
 
