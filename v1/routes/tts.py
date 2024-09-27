@@ -48,6 +48,7 @@ async def text_to_speech(request: Input, client_request: Request):
         chunked_text= chunk_tibetan_text(request.input)
         audio_data =await process_text_chunks(chunked_text)
         file_url = await handle_audio_file(audio_data["audio"])
+        print(file_url)
         client_ip, source_app,city,country = get_client_metadata(client_request)
         response_time = round(audio_data['response_time'] * 1000, 4)
         tts_data = {
@@ -122,7 +123,6 @@ async def process_text_chunks(text_chunks, volume_increase_db=20):
         except Exception as e:
             print(f"Error processing chunk {i}: {str(e)}")
 
-    print(f'Number of chunks: {len(audio_chunks)}')
 
     if not audio_chunks:
         raise ValueError("No valid audio chunks were processed")
@@ -140,7 +140,6 @@ async def process_text_chunks(text_chunks, volume_increase_db=20):
         audio_bytes = merged_audio_io.getvalue()
         end_time = asyncio.get_event_loop().time()  # Record end time
         response_time = end_time - start_time  # Calculate response time
-          
         # Return the merged audio as bytes
         return {
          "audio":   audio_bytes,
