@@ -62,4 +62,4 @@ async def update_user(user_id: int, user_data: dict):
         )
         return updated_user
 
-    return user  
+    return user 
