@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional
 from v1.models import Gender
-from v1.model.user import update_user,create_user
+from v1.model.user import update_user,create_user,get_user_by_email
 
 router = APIRouter()
 
@@ -33,11 +33,19 @@ async def create_user_route(user_data: UserCreateSchema):
     return {"message": "User created successfully", "user_id": user_id}
 
 
-@router.post("/{user_id}/update")
-async def update_user_route(user_id: int, user_data: UserUpdateSchema):
-    updated_user = await update_user(user_id, user_data.dict(exclude_unset=True))
+@router.post("/{email}/update")
+async def update_user_route(email: str, user_data: UserUpdateSchema):
+    updated_user = await update_user(email, user_data.dict(exclude_unset=True))
     
     if updated_user is None:
         raise HTTPException(status_code=404, detail="User not found or update failed")
     return {"message": "User updated successfully", "user": updated_user}
 
+@router.get("/{email}")
+async def get_user_route(email: str):
+    user = await get_user_by_email(email)
+    
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"user": user}

@@ -64,15 +64,16 @@ async def translator(text: str, direction: str ):
                 },
                 headers=headers,
             )
+            print(response)
         if response.status_code != 200:
-            raise Exception(API_ERROR_MESSAGE)
+            raise Exception("status code not 200")
         
         response_data = response.json()
         response_time = round((time.time() - start_time) * 1000, 4)
         received_data = response_data[0].get('generated_text', '')
     
     except Exception as e:
-        raise Exception(API_ERROR_MESSAGE) from e
+        raise Exception(e) from e
     
     
     translation = received_data

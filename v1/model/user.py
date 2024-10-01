@@ -40,14 +40,13 @@ async def create_user(user_data: dict):
 
 
 
-async def update_user(user_id: int, user_data: dict):
-    user = await get_user_by_id(user_id)
+async def update_user(email: str, user_data: dict):
+    user = await get_user_by_email(email)
     if not user:
         return None
 
     # Filter out None values to avoid overwriting with null
     update_data = {k: v for k, v in user_data.items() if v is not None}
-    print(update_data['birth_date'])
     # Convert birth_date to a full ISO 8601 DateTime if it's only a date
 
     if 'birth_date' in update_data:
@@ -57,7 +56,7 @@ async def update_user(user_id: int, user_data: dict):
     # Conditionally update only if there's data to update
     if update_data:
         updated_user = await db.user.update(
-            where={'id': user_id},
+            where={'email': email},
             data=update_data
         )
         return updated_user
