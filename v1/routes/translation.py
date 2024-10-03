@@ -39,6 +39,29 @@ async def check_translation():
        except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
+@router.post("/proxy")
+
+async def proxy(request:Input):
+    lang=detect_language(request.input)
+    try:
+        chunked_text= chunk_text(request.input,lang,50)
+        translated_text=""
+        for text in chunked_text:
+           translated = await translator(text, request.target)
+           translated_text+=translated['translation']
+      
+        
+        return {
+            "success": True,
+            "translation": translated_text,
+            "responseTime": translated['responseTime'],
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+
+
+
 @router.post("/")
 
 async def translate(request:Input, client_request: Request):
