@@ -1,24 +1,28 @@
-from fastapi import APIRouter, HTTPException,Request,Query
+from fastapi import APIRouter, HTTPException,Request,Query,BackgroundTasks
 from v1.utils.translator import translator
 from v1.utils.translator import translator_stream
 from typing import Optional
 from pydantic import BaseModel
 from v1.utils.language_detect import detect_language
-from v1.auth.token_verify import verify
 from v1.model.create_inference import create_translation
 from v1.utils.utils import get_client_metadata
 from v1.utils.utils import get_user_id
 import asyncio
 from v1.model.edit_inference import edit_inference
 from v1.utils.get_id_token import get_id_token
+import queue
 import uuid
 from v1.libs.chunk_text import chunk_tibetan_text
 router = APIRouter()
-
 class Input(BaseModel):
     input: str
     target: str
     
+# Limit to 5 concurrent requests
+semaphore = asyncio.Semaphore(5)
+
+# Queue to hold pending requests
+request_queue = queue.Queue()
 
 
 @router.get("/")
@@ -38,29 +42,39 @@ async def check_translation():
     
        except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
-
+       
 @router.post("/proxy")
+async def proxy(request: Input, background_tasks: BackgroundTasks):
+    lang = detect_language(request.input)
 
-async def proxy(request:Input):
-    lang=detect_language(request.input)
-    try:
-        chunked_text= chunk_text(request.input,lang,50)
-        translated_text=""
-        for text in chunked_text:
-           translated = await translator(text, request.target)
-           translated_text+=translated['translation']
-      
-        
-        return {
-            "success": True,
-            "translation": translated_text,
-            "responseTime": translated['responseTime'],
-        }
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+    # Add the request to the queue
+    request_queue.put(request)
 
+    async with semaphore:
+        # Process the request from the queue
+        request_from_queue = request_queue.get()
 
+        try:
+            chunked_text = chunk_text(request_from_queue.input, lang, 50)
+            translated_text = ""
+
+            # Process each chunk of text
+            for text in chunked_text:
+                translated = await translator(text, request_from_queue.target)
+                translated_text += translated['translation']
+
+            # Release the request from the queue
+            request_queue.task_done()
+
+            return {
+                "success": True,
+                "translation": translated_text,
+                "responseTime": translated['responseTime'],
+            }
+
+        except Exception as e:
+            request_queue.task_done()  # Release request in case of failure
+            raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/")
 
