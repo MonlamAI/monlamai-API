@@ -50,37 +50,25 @@ async def check_translation():
 
 @router.post("/proxy")
 @limiter.exempt
-async def proxy(request: Input, background_tasks: BackgroundTasks):
-    lang = detect_language(request.input)
-
-    # Add the request to the queue
-    request_queue.put(request)
-
-    async with semaphore:
-        # Process the request from the queue
-        request_from_queue = request_queue.get()
-
-        try:
-            chunked_text = chunk_text(request_from_queue.input, lang, 50)
-            translated_text = ""
-
-            # Process each chunk of text
-            for text in chunked_text:
-                translated = await translator(text, request_from_queue.target)
-                translated_text += translated['translation']
-
-            # Release the request from the queue
-            request_queue.task_done()
-
-            return {
-                "success": True,
-                "translation": translated_text,
-                "responseTime": translated['responseTime'],
-            }
-
-        except Exception as e:
-            request_queue.task_done()  # Release request in case of failure
-            raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+async def proxy(request: Input):
+    lang=detect_language(request.input)
+    try:
+        chunked_text= chunk_text(request.input,lang,50)
+        translated_text=""
+        for text in chunked_text:
+           translated = await translator(text, request.target)
+           translated_text+=translated['translation']
+        # save translations
+        
+ 
+        return {
+            "success": True,
+            "translation": translated_text,
+            "responseTime": translated['responseTime'],
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/")
 
