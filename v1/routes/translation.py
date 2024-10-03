@@ -13,6 +13,10 @@ from v1.utils.get_id_token import get_id_token
 import queue
 import uuid
 from v1.libs.chunk_text import chunk_tibetan_text
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 class Input(BaseModel):
     input: str
@@ -42,8 +46,10 @@ async def check_translation():
     
        except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
-       
+
+
 @router.post("/proxy")
+@limiter.exempt
 async def proxy(request: Input, background_tasks: BackgroundTasks):
     lang = detect_language(request.input)
 
