@@ -38,7 +38,6 @@ async def translator(text: str, direction: str ):
     url = MT_MODEL_URL
     received_data = ""
     response_time = 0
-    API_ERROR_MESSAGE = "error"
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
     

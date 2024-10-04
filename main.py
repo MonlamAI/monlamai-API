@@ -91,6 +91,11 @@ async def log_requests(request: Request, call_next):
 def read_root():
     return {"message": "Welcome to API v1"}
 
+@app.get("/get-token")
+def get_token():
+    API_TOKEN = os.getenv("API_KEY") 
+    return {"token":API_TOKEN}
+
 # Include the v1 router with the prefix /api/v1
 app.include_router(translationRoute, prefix="/api/v1/translation",dependencies=[Depends(verify_token)],tags=["translation"])
 app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_token)],tags=["ocr"])
