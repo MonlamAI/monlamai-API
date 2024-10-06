@@ -30,7 +30,8 @@ description = """
 ## Monlam API helps you use our AI models. 🚀
 
 """
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+limiter = Limiter(key_func=get_remote_address, default_limits=["2000/minute"])
+
 
 
 
