@@ -16,11 +16,12 @@ def get_client_metadata(client_request):
     origin_ip = client_request.client.host
     origin = client_request.headers.get('Origin', 'Unknown')
     referer = client_request.headers.get('Referer', 'Unknown')
+   
     source_app = origin if origin != 'Unknown' else referer
     client_ip = client_ip if client_ip else origin_ip
- 
     city, country = get_geolocation(get_first_ip(client_ip))
     return client_ip, source_app,city, country
+
 
 import requests
 

@@ -15,6 +15,11 @@ import uuid
 from v1.libs.chunk_text import chunk_tibetan_text
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from mixpanel import Mixpanel
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
@@ -24,25 +29,37 @@ class Input(BaseModel):
     
 # Limit to 5 concurrent requests
 semaphore = asyncio.Semaphore(5)
-
+MIXPANEL_TOKEN = os.getenv('MIXPANEL_TOKEN')
 # Queue to hold pending requests
 request_queue = queue.Queue()
+mp = Mixpanel(MIXPANEL_TOKEN)
 
 
 @router.get("/")
-async def check_translation():
+async def check_translation(client_request: Request):
        text="hi hello how are you"
        direction="bo"
        try:
-        translated = await translator(
+            translated = await translator(
             text, direction
-        )
-
-        return {
+              )
+            client_ip, source_app, city,country = get_client_metadata(client_request)
+            mp.people_set('2', {'$name'  : 'tenzin kunsang',
+                          '$email' : 'tenkus47@gmail.com',
+                          'plan' : 'Premium'
+                          # Add anything else about the user here
+                          })
+            mp.track('2','OCR',{
+                 '$city': 'Delhi',
+                 '$Country': 'India',
+                 '$ip': '12312,.1231.2312',
+                 '$os': 'Windows',
+            })
+            return {
             "success": True,
             "translation": translated['translation'],
             "responseTime": translated['responseTime'],
-        }
+            }
     
        except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
@@ -51,19 +68,12 @@ async def check_translation():
 @router.post("/proxy")
 @limiter.exempt
 async def proxy(request: Input):
-    lang=detect_language(request.input)
     try:
-        chunked_text= chunk_text(request.input,lang,50)
-        translated_text=""
-        for text in chunked_text:
-           translated = await translator(text, request.target)
-           translated_text+=translated['translation']
+        translated = await translator(request.input, request.target)
         # save translations
-        
- 
         return {
             "success": True,
-            "translation": translated_text,
+            "translation": translated['translation'],
             "responseTime": translated['responseTime'],
         }
     

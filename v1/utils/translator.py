@@ -8,10 +8,11 @@ from v1.utils.get_translation_from_file import get_translation_from_file,count_w
 from v1.utils.language_detect import detect_language
 import time
 import re
-
+from mixpanel import Mixpanel
 load_dotenv()
 MODEL_AUTH = os.getenv('MODEL_AUTH')
 MT_MODEL_URL = os.getenv('MT_MODEL_URL')
+MIXPANEL_TOKEN = os.getenv('MIXPANEL_TOKEN')
 headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {MODEL_AUTH}",
@@ -88,7 +89,7 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
      # Retrieve the Origin and Referer headers
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
-    
+    mp = Mixpanel("YOUR_TOKEN")
     # If the text has two or fewer words, try to get the translation from the file
     if word_count <= 2:
         translation = get_translation_from_file(text, direction)
