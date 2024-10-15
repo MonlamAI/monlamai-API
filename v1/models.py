@@ -32,10 +32,15 @@ class User(BaseModel):
     textToSpeechs: List['TextToSpeech'] = []
     ocrs: List['OCR'] = []
 
+    threads: List['Thread'] = []
+    chats: List['Chat'] = []
+
     likedTranslations: List['Translation'] = []
     likedSpeechToTexts: List['SpeechToTexts'] = []
     likedTextToSpeechs: List['TextToSpeech'] = []
     likedOcrs: List['OCR'] = []
+    likedChats: List['Chat'] = []
+    
 
 class Translation(BaseModel):
     id: int
@@ -106,9 +111,34 @@ class OCR(BaseModel):
     user: Optional[User]
     likedByUsers: List[User] = []
 
+class Thread(BaseModel):
+    id: int
+    title: str
+    createdById: int
+    createdBy: User
+    createdAt: datetime
+    updatedAt: datetime
+
+    # Relationships
+    chats: List['Chat'] = []
+
+class Chat(BaseModel):
+    id: int
+    content: str
+    threadId: int
+    thread: Thread
+    senderId: int
+    sender: User
+    createdAt: datetime
+    updatedAt: datetime
+    likedByUsers: List[User] = []
+
+
 # Resolve forward references
 User.update_forward_refs()
 Translation.update_forward_refs()
 SpeechToTexts.update_forward_refs()
 TextToSpeech.update_forward_refs()
 OCR.update_forward_refs()
+Thread.update_forward_refs()
+Chat.update_forward_refs()

@@ -8,6 +8,8 @@ from v1.routes.stt import router as sttRoute
 from v1.routes.ocr import router as ocrRoute
 from v1.routes.s3 import router as s3Route
 from v1.routes.user import router as userRoute
+from v1.routes.chat import router as chatRoute
+
 import uvicorn
 from v1.auth.auth_handler import verify_token 
 import os 
@@ -106,6 +108,8 @@ app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)],tags=["text to speech"])
 app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verify_token)],tags=["file upload"])
 app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verify_token)],tags=["user"])
+app.include_router(chatRoute, prefix="/api/v1/chat", dependencies=[Depends(verify_token)],tags=["chat"])
+
 
 
 

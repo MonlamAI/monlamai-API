@@ -3,15 +3,12 @@ from v1.utils.google_ocr import google_ocr
 from v1.libs.get_buffer import get_buffer
 from pydantic import BaseModel
 from v1.libs.get_text import get_text
-from typing import Optional
 from v1.utils.utils import get_user_id
 from v1.utils.utils import get_client_metadata
 from v1.model.edit_inference import edit_inference
 from v1.model.create_inference import create_ocr
 from PIL import Image
 from io import BytesIO
-from v1.libs.ocr_parse import process_text_annotations
-import asyncio
 from v1.utils.get_id_token import get_id_token
 from PIL import ImageOps
 router = APIRouter()

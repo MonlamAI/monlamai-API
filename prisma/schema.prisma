@@ -36,6 +36,8 @@ model User {
     speechToTexts SpeechToTexts[] @relation("UserSpeechToTexts")
     textToSpeechs TextToSpeech[]  @relation("UserTextToSpeechs")
     ocrs          OCR[]           @relation("UserOCRs")
+    threads     Thread[]  @relation("UserThreads")
+    chats       Chat[]    @relation("UserChats")
 }
 
 model Translation {
@@ -116,4 +118,33 @@ model OCR {
 
     liked_count    Int @default(0)
     disliked_count Int @default(0)
+}
+
+model Thread {
+  id          Int       @id @default(autoincrement())
+  title       String
+  createdBy   User      @relation("UserThreads", fields: [createdById], references: [id])
+  createdById Int
+  chats       Chat[]    @relation("ThreadChats")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Chat {
+  id          Int       @id @default(autoincrement())
+  input       String
+  output      String
+  thread      Thread    @relation("ThreadChats", fields: [threadId], references: [id])
+  threadId    Int
+  sender      User      @relation("UserChats", fields: [senderId], references: [id])
+  senderId    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  liked_count    Int @default(0)
+  disliked_count Int @default(0)
+  model          String
+  latency        String
+  token          String
+  edit_input     String?
+  edit_output    String?
 }
