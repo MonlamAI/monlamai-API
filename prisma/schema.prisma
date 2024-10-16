@@ -121,11 +121,12 @@ model OCR {
 }
 
 model Thread {
-  id          Int       @id @default(autoincrement())
+  id          String       @id @default(uuid())
   title       String
   createdBy   User      @relation("UserThreads", fields: [createdById], references: [id])
   createdById Int
   chats       Chat[]    @relation("ThreadChats")
+  show        Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -135,7 +136,7 @@ model Chat {
   input       String
   output      String
   thread      Thread    @relation("ThreadChats", fields: [threadId], references: [id])
-  threadId    Int
+  threadId    String
   sender      User      @relation("UserChats", fields: [senderId], references: [id])
   senderId    Int
   createdAt   DateTime  @default(now())
@@ -143,8 +144,8 @@ model Chat {
   liked_count    Int @default(0)
   disliked_count Int @default(0)
   model          String
-  latency        String
-  token          String
+  latency        Int
+  token          Int
   edit_input     String?
   edit_output    String?
 }

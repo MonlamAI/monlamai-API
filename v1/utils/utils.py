@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 
 load_dotenv(override=True)
+
 def get_first_ip(ip_string):
     # Split the string by commas and strip any whitespace
     ip_list = [ip.strip() for ip in ip_string.split(',')]

@@ -15,6 +15,7 @@ router = APIRouter()
 
 class Input(BaseModel):
     input: str
+    
 
 
 @router.get("/")

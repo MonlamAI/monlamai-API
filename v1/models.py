@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List
@@ -112,7 +112,7 @@ class OCR(BaseModel):
     likedByUsers: List[User] = []
 
 class Thread(BaseModel):
-    id: int
+    id: str
     title: str
     createdById: int
     createdBy: User
@@ -132,6 +132,8 @@ class Chat(BaseModel):
     createdAt: datetime
     updatedAt: datetime
     likedByUsers: List[User] = []
+    latency: int = Field(..., description="Latency in milliseconds")
+    token: int = Field(..., description="Token count or identifier")
 
 
 # Resolve forward references

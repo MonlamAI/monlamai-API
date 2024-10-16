@@ -7,14 +7,16 @@ async def create_chat(data: dict):
 async def update_chat(chat_id: int, data: dict):
     update_data = {}
     action = data.get("action")
-    edit_text = data.get("edit_text")
+    edit_text = data.get("edit_input")
+    edit_response = data.get("edit_output")
 
     if action == "like":
         update_data["liked_count"] = {"increment": 1}
     elif action == "dislike":
         update_data["disliked_count"] = {"increment": 1}
     elif action == "edit" and edit_text:
-        update_data["edit_input"] = edit_text  # or edit_output based on your requirements
+        update_data["edit_input"] = edit_text # or edit_output based on your requirements
+        update_data["edit_output"] = edit_response # or edit_output based on your requirements
 
     if not update_data:
         return None
@@ -38,7 +40,7 @@ async def update_chat_output(chat_id: int, output: str):
     )
     return updated_chat
 
-async def fetch_chat_history(thread_id: int):
+async def fetch_chat_history(thread_id: str):
     """
     Fetch chat history for a given thread to provide context for AI responses.
     """
