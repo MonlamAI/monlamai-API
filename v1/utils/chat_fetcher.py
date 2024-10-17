@@ -5,7 +5,7 @@ import requests
 import httpx
 from fastapi.responses import StreamingResponse
 load_dotenv(override=True)
-
+import re
 
 headers = {
         'Accept': 'application/json'
@@ -64,61 +64,73 @@ def chat(user_input, chat_history=None):
 
 
 
-
-
 async def chat_stream(text: str, history=[], on_complete=None):
     # Retrieve environment variables
     url = os.getenv("LLM_MODEL_URL")
     url = f"{url}/generate_stream"
-    
+
     # Define the event stream generator
     async def event_stream():
         generated_text = None
         metadata = None
-        
+        buffer = ''  # Initialize buffer for partial data
+
         try:
             params = {
                 "user_input": text,
                 "chat_history": json.dumps(history)  # Ensure history is passed as a JSON string
             }
 
-            async with httpx.AsyncClient() as client:
-                async with client.stream("POST", url, params=params, headers=headers) as response:
-                    async for chunk in response.aiter_bytes():
-                        # Process each chunk of data
-                        data = chunk.decode('utf-8').strip()
-                        if not data:
-                            continue
+            headers = {
+                # Add any necessary headers here
+            }
 
-                        for line in data.split('\n'):
+            async with httpx.AsyncClient() as client:
+                final_text = ''
+                async with client.stream("POST", url, params=params, headers=headers) as response:
+                    async for chunk in response.aiter_text():
+                        # Accumulate chunks in the buffer
+                        buffer += chunk
+                        
+                        # Process all complete lines in the buffer
+                        while '\n' in buffer:
+                            line, buffer = buffer.split('\n', 1)
+                            line = line.strip()
+                            if not line:
+                                continue
+
                             if line.startswith("data:"):
                                 json_data = line[len("data:"):].strip()
                                 if not json_data:
                                     continue
 
                                 try:
+                                    # For debugging: Limit the length of printed data
+                                    # print("Received json_data:", json_data[:500])
+
                                     parsed_data = json.loads(json_data)
-                                except json.JSONDecodeError as e:
-                                    continue
+                                except json.JSONDecodeError:
+                                    # The JSON data is incomplete; wait for more data
+                                    buffer = line + '\n' + buffer  # Re-add the line to buffer
+                                    break  # Exit the loop to read more data
 
                                 text_value = parsed_data.get("text")
-                                generated_text = parsed_data.get("generated_text")
-                                metadata = parsed_data.get("metadata")
-
                                 if text_value:
+                                    final_text += text_value
                                     yield f"data: {json.dumps({'text': text_value})}\n\n"
 
+                                generated_text = parsed_data.get("generated_text")
+                                metadata = parsed_data.get("metadata")
                                 if generated_text:
                                     yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata})}\n\n"
                                     return
 
         except Exception as e:
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
-        
+
         finally:
             # Ensure on_complete is called even if an error occurs
             if on_complete:
                 await on_complete(generated_text or '', metadata or {})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream;charset=UTF-8;")
-

@@ -137,6 +137,7 @@ async def create_new_chat(input_text: str, thread_id: str, user_id: int):
 async def get_ai_response(input_text: str, chat_history, chat_id: str):
     async def on_complete(generated_text, metadata):
         if generated_text:
+            print('generatated text',generated_text)
             asyncio.create_task(update_chat_output(chat_id, generated_text,metadata))
 
     return await chat_stream(input_text, chat_history, on_complete)
