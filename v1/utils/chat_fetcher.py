@@ -6,6 +6,7 @@ import httpx
 from fastapi.responses import StreamingResponse
 load_dotenv(override=True)
 
+
 headers = {
         'Accept': 'application/json'
     }
@@ -65,13 +66,16 @@ def chat(user_input, chat_history=None):
 
 
 
-async def chat_stream(text: str,history=[], on_complete=None):
+async def chat_stream(text: str, history=[], on_complete=None):
     # Retrieve environment variables
-    url = os.getenv("LLM_MODEL_URL") 
+    url = os.getenv("LLM_MODEL_URL")
     url = f"{url}/generate_stream"
     
     # Define the event stream generator
     async def event_stream():
+        generated_text = None
+        metadata = None
+        
         try:
             params = {
                 "user_input": text,
@@ -92,28 +96,29 @@ async def chat_stream(text: str,history=[], on_complete=None):
                                 if not json_data:
                                     continue
 
-                                parsed_data = json.loads(json_data)
+                                try:
+                                    parsed_data = json.loads(json_data)
+                                except json.JSONDecodeError as e:
+                                    continue
+
                                 text_value = parsed_data.get("text")
                                 generated_text = parsed_data.get("generated_text")
-                                metadata=parsed_data.get("metadata")
-                                # latency = metadata["latency"]
-                                # tokens = metadata["tokens"]
-                                # model = metadata["model"]
-                                
+                                metadata = parsed_data.get("metadata")
+
                                 if text_value:
                                     yield f"data: {json.dumps({'text': text_value})}\n\n"
 
-                                # Yield the generated text as an SSE event and end the stream
                                 if generated_text:
-                                    yield f"data: {json.dumps({'generated_text': generated_text,'metadata':metadata})}\n\n"
+                                    yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata})}\n\n"
                                     return
+
         except Exception as e:
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
         
         finally:
+            # Ensure on_complete is called even if an error occurs
             if on_complete:
-                if generated_text and metadata:
-                   await on_complete(generated_text or '',metadata )  # Use empty string if no generated_text
+                await on_complete(generated_text or '', metadata or {})
 
+    return StreamingResponse(event_stream(), media_type="text/event-stream;charset=UTF-8;")
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
