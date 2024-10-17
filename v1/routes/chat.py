@@ -143,7 +143,6 @@ async def get_ai_response(input_text: str, chat_history, chat_id: str):
 
 @router.put("/{chat_id}")
 async def update_existing_chat(chat_id: int, update: UpdateChatInput):
-    print(chat_id, update)
     
     """
     Update an existing chat message by performing actions like edit, like, or dislike.

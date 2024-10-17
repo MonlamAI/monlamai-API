@@ -4,8 +4,7 @@ async def create_chat(data: dict):
     chat = await db.chat.create(data=data)
     return chat
 
-async def update_chat(chat_id: int, data: dict,metadata: dict):
-    print(metadata)
+async def update_chat(chat_id: int, data: dict,metadata: dict=None):
     
     update_data = {}
     action = data.get("action")
