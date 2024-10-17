@@ -107,7 +107,7 @@ async def handle_existing_chat(chat_input: CreateChatInput):
                 "edit_output": generated_text,
                 "action": "edit"
             }
-            asyncio.create_task(update_chat(existing_chat.id, updated_chat_data))
+            asyncio.create_task(update_chat(existing_chat.id, updated_chat_data,metadata))
 
     ai_response = await chat_stream(chat_input.input, chat_history, on_complete)
     return ai_response
@@ -128,16 +128,16 @@ async def create_new_chat(input_text: str, thread_id: str, user_id: int):
         "output": "",  # Placeholder for AI response
         "threadId": thread_id,
         "senderId": user_id,
-        "model": "default_model",  # Replace with actual model if applicable
+        "model": "default",  # Replace with actual model if applicable
         "latency": 0,  # Replace with actual latency measurement
-        "token": 23,  # Replace with actual token if applicable
+        "token": 0,  # Replace with actual token if applicable
     }
     return await create_chat(chat_data)
 
 async def get_ai_response(input_text: str, chat_history, chat_id: str):
     async def on_complete(generated_text, metadata):
         if generated_text:
-            asyncio.create_task(update_chat_output(chat_id, generated_text))
+            asyncio.create_task(update_chat_output(chat_id, generated_text,metadata))
 
     return await chat_stream(input_text, chat_history, on_complete)
 
