@@ -144,7 +144,6 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
                         yield f"data: {json.dumps({'generated_text': final_text, 'metadata': metadata,'valid':True})}\n\n"
                         return
         except Exception as e:
-            print('all exception')
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
             
 
