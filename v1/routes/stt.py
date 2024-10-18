@@ -8,6 +8,9 @@ from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_speech_to_text
 from v1.model.edit_inference import edit_inference
 from v1.utils.get_id_token import get_id_token
+import asyncio
+import uuid
+
 router = APIRouter()
 
 class Input(BaseModel):
@@ -40,7 +43,9 @@ async def speech_to_text_func(request:Input, client_request: Request):
         audio=await get_buffer(audio_url)
         client_ip, source_app,city,country = get_client_metadata(client_request)
         text_data, response_time = await transcribe_audio(audio, lang)
+        generated_id=  uuid.uuid4()
         stt_data = {
+        "id":generated_id,
         "input": request.input,
         "output": text_data,
         "response_time": response_time,
@@ -51,10 +56,10 @@ async def speech_to_text_func(request:Input, client_request: Request):
         "city": city,
         "country": country,
         }
-        data= await create_speech_to_text(stt_data)
+        asyncio.create_task(create_speech_to_text(stt_data))
         return {
             "success": True,
-            "id":data.id,
+            "id":generated_id,
             "output": text_data,
             "responseTime": response_time,
         }

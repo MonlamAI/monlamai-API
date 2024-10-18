@@ -85,7 +85,6 @@ async def proxy(request: Input):
 async def translate(request:Input, client_request: Request):
     token=get_id_token(client_request)
     user_id =await get_user_id(token)
-    inference_id = str(uuid.uuid4())
     lang=detect_language(request.input)
     try:
         chunked_text= chunk_text(request.input,lang,50)
@@ -94,10 +93,11 @@ async def translate(request:Input, client_request: Request):
            translated = await translator(text, request.target)
            translated_text+=translated['translation']
         # save translations
-        
+        generated_id=  uuid.uuid4()
         input_lang = detect_language(request.input) or ""
         client_ip, source_app, city,country = get_client_metadata(client_request)
         translation_data = {
+                            "id":generated_id,
                             "input": request.input, 
                             "output": translated_text,  
                             "input_lang": input_lang, 
@@ -110,13 +110,12 @@ async def translate(request:Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
-        if inference_id:
-            translation_data["id"] = inference_id
+       
         asyncio.create_task(create_translation(translation_data))
         
         return {
             "success": True,
-            "id":inference_id,
+            "id":generated_id,
             "translation": translated_text,
             "responseTime": translated['responseTime'],
         }

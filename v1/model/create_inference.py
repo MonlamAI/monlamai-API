@@ -6,6 +6,7 @@ from v1.Config.Connection import db,prisma_connection
 async def create_translation( translation_data: dict) -> Translation:
    
     data = {
+        'id':translation_data['id'],
         'input': translation_data['input'],
         'output': translation_data['output'],
         'inputLang': translation_data['input_lang'],
@@ -26,6 +27,7 @@ async def create_translation( translation_data: dict) -> Translation:
 async def create_speech_to_text( speech_data: dict) -> SpeechToTexts:
     speech_to_text = await db.speechtotexts.create(
         data={
+            'id':speech_data['id'],
             'input': speech_data['input'],
             'output': speech_data['output'],
             'responseTime': str(round(speech_data['response_time'])),
@@ -42,6 +44,7 @@ async def create_speech_to_text( speech_data: dict) -> SpeechToTexts:
 async def create_text_to_speech( tts_data: dict) -> TextToSpeech:
     text_to_speech = await db.texttospeech.create(
         data={
+            'id':tts_data['id'],
             'input': tts_data['input'],
             'output': tts_data['output'],
             'responseTime': str(round(tts_data['response_time'])),
@@ -58,6 +61,7 @@ async def create_text_to_speech( tts_data: dict) -> TextToSpeech:
 async def create_ocr(ocr_data: dict) -> OCR:
     return await db.ocr.create(
         data={
+            'id':ocr_data['id'],
             'input': ocr_data['input'],
             'output': ocr_data['output'],
             'responseTime': str(round(ocr_data['response_time'])),

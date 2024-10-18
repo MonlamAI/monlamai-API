@@ -11,6 +11,8 @@ from PIL import Image
 from io import BytesIO
 from v1.utils.get_id_token import get_id_token
 from PIL import ImageOps
+import asyncio
+import uuid
 router = APIRouter()
 
 class Input(BaseModel):
@@ -50,6 +52,7 @@ async def ocr(request: Input, client_request: Request):
         image = Image.open(BytesIO(buffer))
         image = ImageOps.exif_transpose(image)
         coordinates = await google_ocr(image)
+        generated_id=  uuid.uuid4()
 
         if len(coordinates['textAnnotations']) == 0:
             raise HTTPException(status_code=400, detail="No text found in the image")
@@ -57,6 +60,7 @@ async def ocr(request: Input, client_request: Request):
        
         width, height = image.size
         ocr_data = {
+             "id":generated_id,
         "input": request.input,
         "output": text,
         "response_time": 0,
@@ -67,10 +71,10 @@ async def ocr(request: Input, client_request: Request):
         "city": city,
         "country": country,
          }
-        data= await create_ocr(ocr_data)
+        asyncio.create_task(create_ocr(ocr_data))
         
         return {
-            "id":data.id,
+            "id":generated_id,
             "success": True,
             "output": text,
             "coordinates":coordinates,
