@@ -30,3 +30,12 @@ async def delete_thread_by_id(thread_id: int):
         data={"show":False}
     )
     return threads
+
+async def update_is_completed(thread_id: int):
+    # Mock implementation - Replace with actual database call
+    # Example: await db.execute(query)
+    threads = await db.thread.update(
+        where={"id":thread_id},
+        data={"is_completed":True}
+    )
+    return threads

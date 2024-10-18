@@ -59,7 +59,7 @@ class ChatResponse(BaseModel):
     ai_response: str
 
 # Endpoints
-
+cancellation_events = {}
 @router.post("/")
 async def chat_response(chat_input: CreateChatInput):
     """
@@ -131,6 +131,7 @@ async def create_new_chat(input_text: str, thread_id: str, user_id: int,upload_d
         "latency": upload_data.get('metadata').get('latency'),  # Replace with actual latency measurement
         "token": upload_data.get('metadata').get('tokens'),  # Replace with actual token if applicable
     }
+    
     return await create_chat(chat_data)
 
 async def get_ai_response(input_text: str, chat_history, thread_id:str,user_id):
@@ -142,7 +143,25 @@ async def get_ai_response(input_text: str, chat_history, thread_id:str,user_id):
             upload_data['generated_text']=generated_text
             asyncio.create_task(create_new_chat(input_text,thread_id,user_id,upload_data))
 
-    return await chat_stream(input_text, chat_history, on_complete)
+
+    cancel_event = asyncio.Event()
+    cancellation_events[thread_id] = cancel_event
+    stream=await chat_stream(input_text, chat_history, on_complete,cancel_event)
+    return stream
+
+
+@router.post("/cancel/{thread_id}")
+async def cancel_stream(thread_id: str):
+    """
+    Endpoint to cancel the stream for a specific thread.
+    """
+    if thread_id in cancellation_events:
+        cancellation_events[thread_id].set()  # Trigger the cancellation event
+        return {"message": f"Stream for thread {thread_id} canceled"}
+    else:
+        raise HTTPException(status_code=404, detail=f"Thread {thread_id} not found")
+
+
 
 @router.put("/{chat_id}")
 async def update_existing_chat(chat_id: int, update: UpdateChatInput):

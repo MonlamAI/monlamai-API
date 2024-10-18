@@ -6,7 +6,7 @@ import httpx
 from fastapi.responses import StreamingResponse
 load_dotenv(override=True)
 import re
-
+import asyncio
 headers = {
         'Accept': 'application/json'
     }
@@ -64,7 +64,7 @@ def chat(user_input, chat_history=None):
 
 
 
-async def chat_stream(text: str, history=[], on_complete=None):
+async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
     # Retrieve environment variables
     url = os.getenv("LLM_MODEL_URL")
     url = f"{url}/generate_stream"
@@ -72,6 +72,8 @@ async def chat_stream(text: str, history=[], on_complete=None):
     # Define the event stream generator
     async def event_stream():
         generated_text = None
+        final_text = ''
+                
         metadata = None
         buffer = ''  # Initialize buffer for partial data
 
@@ -86,63 +88,70 @@ async def chat_stream(text: str, history=[], on_complete=None):
             }
 
             async with httpx.AsyncClient() as client:
-                final_text = ''
                 async with client.stream("POST", url, params=params, headers=headers) as response:
-                    async for chunk in response.aiter_text():
-                        # Accumulate chunks in the buffer
-                        buffer += chunk
-                        
-                        # Process all complete lines in the buffer
-                        while '\n' in buffer:
-                            line, buffer = buffer.split('\n', 1)
-                            line = line.strip()
-                            if not line:
-                                continue
-
-                            if line.startswith("data:"):
-                                json_data = line[len("data:"):].strip()
+                    try:
+                        async for chunk in response.aiter_text():
+                            if cancel_event.is_set():  # Check if the cancel event is triggered
                                 
-                                if not json_data:
+                               raise asyncio.CancelledError("Stream canceled by user.")
+                            # Accumulate chunks in the buffer
+                            buffer += chunk
+                            
+                            # Process all complete lines in the buffer
+                            while '\n' in buffer:
+                                line, buffer = buffer.split('\n', 1)
+                                line = line.strip()
+                                if not line:
                                     continue
 
-                                try:
-                                    # For debugging: Limit the length of printed data
-                                    # print("Received json_data:", json_data[:500])
-
-                                    parsed_data = json.loads(json_data)
-                                except json.JSONDecodeError as e:
-                                    print('error ', e)
-                                    print('line',line)
-                                    print('buffer', buffer)
+                                if line.startswith("data:"):
+                                    json_data = line[len("data:"):].strip()
                                     
-                                    # The JSON data is incomplete; wait for more data
-                                    
-                                    buffer2 = line + '\n' + buffer  # Re-add the line to buffer
-                                    print('buffer', buffer2)
-                                    
-                                    break  # Exit the loop to read more data
+                                    if not json_data:
+                                        continue
 
-                                text_value = parsed_data.get("text")
-                                if text_value:
-                                    final_text += text_value
-                                    yield f"data: {json.dumps({'text': text_value})}\n\n"
-                                  
-                                generated_text = parsed_data.get("generated_text")
-                                metadata = parsed_data.get("metadata")
-                                valid = parsed_data.get("response",True) 
-                                
-                                
-                                if generated_text:
-                                    yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata,'valid':valid})}\n\n"
-                                    return
+                                    try:
+                                        # For debugging: Limit the length of printed data
+                                        # print("Received json_data:", json_data[:500])
+                                        parsed_data = json.loads(json_data)
+                                    except json.JSONDecodeError as e:
+                                        # The JSON data is incomplete; wait for more data
+                                        buffer2 = line + '\n' + buffer  # Re-add the line to buffer
+                                        print('buffer', buffer2)
+                                        
+                                        break  # Exit the loop to read more data
 
+                                    text_value = parsed_data.get("text")
+                                    if text_value:
+                                        final_text += text_value
+                                        yield f"data: {json.dumps({'text': text_value})}\n\n"
+                                    
+                                    generated_text = parsed_data.get("generated_text")
+                                    metadata = parsed_data.get("metadata",{})
+                                    valid = parsed_data.get("response",True) 
+                                    
+                                    
+                                    
+                                    if generated_text:
+                                        yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata,'valid':valid})}\n\n"
+                                        return
+                    except asyncio.CancelledError as e:
+                        metadata={
+                                "model":"",
+                                "latency":0,
+                                "tokens":0
+                                }
+                        yield f"data: {json.dumps({'generated_text': final_text, 'metadata': metadata,'valid':True})}\n\n"
+                        return
         except Exception as e:
+            print('all exception')
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
             
 
         finally:
             # Ensure on_complete is called even if an error occurs
             if on_complete:
-                await on_complete(generated_text or '', metadata or {})
+                generated_text = generated_text or final_text
+                await on_complete(generated_text or '', metadata )
 
     return StreamingResponse(event_stream(), media_type="text/event-stream;charset=UTF-8;")
