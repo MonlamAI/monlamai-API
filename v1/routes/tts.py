@@ -48,7 +48,6 @@ async def text_to_speech(request: Input, client_request: Request):
         chunked_text= chunk_tibetan_text(request.input)
         audio_data =await process_text_chunks(chunked_text)
         file_url = await handle_audio_file(audio_data["audio"])
-        print(file_url)
         client_ip, source_app,city,country = get_client_metadata(client_request)
         response_time = round(audio_data['response_time'] * 1000, 4)
         tts_data = {
