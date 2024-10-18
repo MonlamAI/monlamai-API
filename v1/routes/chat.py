@@ -76,13 +76,11 @@ async def chat_response(chat_input: CreateChatInput):
 
         # Create or fetch thread
         thread_id = await get_or_create_thread(chat_input.thread_id, chat_input.input, user_id)
-
-        # Prepare and store new chat data
-        new_chat = await create_new_chat(chat_input.input, thread_id, user_id)
-
+        
         # Fetch chat history and get AI response
         chat_history = await fetch_chat_history(thread_id)
-        ai_response = await get_ai_response(chat_input.input, chat_history, new_chat.id)
+      
+        ai_response = await get_ai_response(chat_input.input, chat_history, chat_input.thread_id,user_id)
 
         return ai_response
 
@@ -122,23 +120,27 @@ async def get_or_create_thread(thread_id: str, input_text: str, user_id: int):
     
     return thread.id
 
-async def create_new_chat(input_text: str, thread_id: str, user_id: int):
+async def create_new_chat(input_text: str, thread_id: str, user_id: int,upload_data):
+    
     chat_data = {
         "input": input_text,
-        "output": "",  # Placeholder for AI response
+        "output": upload_data.get('generated_text'),  # Placeholder for AI response
         "threadId": thread_id,
         "senderId": user_id,
-        "model": "default",  # Replace with actual model if applicable
-        "latency": 0,  # Replace with actual latency measurement
-        "token": 0,  # Replace with actual token if applicable
+        "model": upload_data.get('metadata').get('model'),  # Replace with actual model if applicable
+        "latency": upload_data.get('metadata').get('latency'),  # Replace with actual latency measurement
+        "token": upload_data.get('metadata').get('tokens'),  # Replace with actual token if applicable
     }
     return await create_chat(chat_data)
 
-async def get_ai_response(input_text: str, chat_history, chat_id: str):
+async def get_ai_response(input_text: str, chat_history, thread_id:str,user_id):
     async def on_complete(generated_text, metadata):
         if generated_text:
             print('generatated text',generated_text)
-            asyncio.create_task(update_chat_output(chat_id, generated_text,metadata))
+            upload_data={}
+            upload_data['metadata'] = metadata
+            upload_data['generated_text']=generated_text
+            asyncio.create_task(create_new_chat(input_text,thread_id,user_id,upload_data))
 
     return await chat_stream(input_text, chat_history, on_complete)
 

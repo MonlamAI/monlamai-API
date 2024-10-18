@@ -1,6 +1,6 @@
 
 
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import  HTTPException, APIRouter
 from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional

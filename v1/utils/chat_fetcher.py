@@ -82,7 +82,7 @@ async def chat_stream(text: str, history=[], on_complete=None):
             }
 
             headers = {
-                # Add any necessary headers here
+            'Accept': 'application/json'
             }
 
             async with httpx.AsyncClient() as client:
@@ -101,6 +101,7 @@ async def chat_stream(text: str, history=[], on_complete=None):
 
                             if line.startswith("data:"):
                                 json_data = line[len("data:"):].strip()
+                                
                                 if not json_data:
                                     continue
 
@@ -109,24 +110,35 @@ async def chat_stream(text: str, history=[], on_complete=None):
                                     # print("Received json_data:", json_data[:500])
 
                                     parsed_data = json.loads(json_data)
-                                except json.JSONDecodeError:
+                                except json.JSONDecodeError as e:
+                                    print('error ', e)
+                                    print('line',line)
+                                    print('buffer', buffer)
+                                    
                                     # The JSON data is incomplete; wait for more data
-                                    buffer = line + '\n' + buffer  # Re-add the line to buffer
+                                    
+                                    buffer2 = line + '\n' + buffer  # Re-add the line to buffer
+                                    print('buffer', buffer2)
+                                    
                                     break  # Exit the loop to read more data
 
                                 text_value = parsed_data.get("text")
                                 if text_value:
                                     final_text += text_value
                                     yield f"data: {json.dumps({'text': text_value})}\n\n"
-
+                                  
                                 generated_text = parsed_data.get("generated_text")
                                 metadata = parsed_data.get("metadata")
+                                valid = parsed_data.get("response",True) 
+                                
+                                
                                 if generated_text:
-                                    yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata})}\n\n"
+                                    yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata,'valid':valid})}\n\n"
                                     return
 
         except Exception as e:
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
+            
 
         finally:
             # Ensure on_complete is called even if an error occurs

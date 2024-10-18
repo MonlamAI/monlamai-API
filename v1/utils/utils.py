@@ -46,5 +46,9 @@ def get_geolocation(ip_address):
 
 async def get_user_id(token: str):
     if token:
-        return await verify(token)
-    return None   
+        user = await verify(token)
+        print('user', user)
+        if user:
+            user_id = user.id  # Access id using dot notation
+            return user_id
+    return None
