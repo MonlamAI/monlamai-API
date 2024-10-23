@@ -36,8 +36,11 @@ async def create_user(user_data: dict):
     return user
 
 
-
-
+async def delete_user_by_email(email: str):
+        user = await db.user.delete(
+               where={'email': email}
+                )
+        return user
 
 
 async def update_user(email: str, user_data: dict):
