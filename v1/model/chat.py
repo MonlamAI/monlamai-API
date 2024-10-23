@@ -1,5 +1,7 @@
 from v1.Config.Connection import db,prisma_connection
 from v1.model.thread import get_thread_by_id
+import json
+
 async def create_chat(data: dict):
     chat = await db.chat.create(data=data)
     return chat
@@ -22,7 +24,7 @@ async def update_chat(chat_id: int, data: dict,metadata: dict=None):
     if metadata:
         update_data["latency"] = metadata['latency']
         update_data["model"]= metadata['model']
-        update_data["token"]= metadata['tokens']
+        update_data["token"]= json.dump(metadata['tokens'])
     if not update_data:
         return None
 

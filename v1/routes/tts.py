@@ -25,8 +25,8 @@ class Input(BaseModel):
  
 
 @router.get("/")
-async def check_text_to_speech():
-       text="ངའི་མིང་ལ་ཀུན་བཟང་རེད་།" 
+async def check_text_to_speech(input:str):
+       text=input; 
        try:
         audio_data = await tibetan_synthesizer(
             text
@@ -34,8 +34,8 @@ async def check_text_to_speech():
 
         return {
             "success": True,
-            "audio": audio_data['audio'],
             "responseTime": audio_data['response_time'],
+            "audio": audio_data['audio'],
         }
     
        except Exception as e:
