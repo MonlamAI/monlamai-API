@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional
 from v1.models import Gender
-from v1.model.user import update_user,create_user,get_user_by_email
+from v1.model.user import update_user,delete_user_by_email,create_user,get_user_by_email
 
 router = APIRouter()
 
@@ -48,3 +48,12 @@ async def get_user_route(email: str):
         raise HTTPException(status_code=404, detail="User not found")
     
     return {"user": user}
+
+@router.delete("/{email}")
+async def delete_user_route(email:str):
+    user= await delete_user_by_email(email)
+    
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {'deleted':True}
