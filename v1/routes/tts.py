@@ -87,21 +87,20 @@ async def stream_endpoint(request: Input, client_request: Request):
         
  # Define on_complete as an async function to avoid issues
     async def on_complete(output, response_time):
-       print('output',output),
-       print('response_time',response_time)
-        # tts_data = {
-        #     "input": request.input,
-        #     "output": output,
-        #     "response_time": response_time,
-        #     "ip_address": client_ip,
-        #     "version": None,
-        #     "source_app": source_app,
-        #     "user_id": user_id,
-        #     "city": city,
-        #     "country": country,
-        # }
-        # # Use asyncio to create a task for the asynchronous function
-        # asyncio.create_task(create_text_to_speech(tts_data))
+    
+        tts_data = {
+            "input": request.input,
+            "output": output,
+            "response_time": response_time,
+            "ip_address": client_ip,
+            "version": None,
+            "source_app": source_app,
+            "user_id": user_id,
+            "city": city,
+            "country": country,
+        }
+        # Use asyncio to create a task for the asynchronous function
+        asyncio.create_task(create_text_to_speech(tts_data))
                  
     return StreamingResponse(process_text_chunks_stream(chunked_text,volume_increase_db=20,on_complete=on_complete), media_type="text/event-stream")
 # Helper function to update TTS data after streaming (to be called separately)
