@@ -59,7 +59,7 @@ class ChatResponse(BaseModel):
     ai_response: str
 
 # Endpoints
-
+cancellation_events = {}
 @router.post("/")
 async def chat_response(chat_input: CreateChatInput):
     """
@@ -72,59 +72,16 @@ async def chat_response(chat_input: CreateChatInput):
     try:
         # Check if updating an existing chat
         if chat_input.chat_id:
-            existing_chat = await get_chat_by_id(chat_input.chat_id)
-            if not existing_chat:
-                raise HTTPException(status_code=404, detail="Chat not found")
+            return await handle_existing_chat(chat_input)
 
-            chat_history = await fetch_chat_history(existing_chat.threadId)
-
-            async def on_complete(generated_text, metadata):
-                if generated_text:
-                    updated_chat_data = {
-                        "edit_input": chat_input.input,
-                        "edit_output": generated_text,
-                        "action": "edit"
-                    }
-                    asyncio.create_task(update_chat_output(existing_chat.id, updated_chat_data))
-
-            # Get AI response
-            ai_response = await chat_stream(chat_input.input, chat_history, on_complete)
-            return ai_response
-
-        # Determine whether to create a new thread or use existing
-        if chat_input.thread_id:
-            thread = await get_thread_by_id(chat_input.thread_id)
-            if not thread:
-                thread = await create_thread({"id": chat_input.thread_id, "title": chat_input.input, "createdById": user_id})
-            thread_id = thread.id
-        else:
-            # Create a new thread if no thread_id provided
-            thread = await create_thread({"title": chat_input.input, "createdById": user_id})
-            thread_id = thread.id
-
-        # Prepare chat data
-        chat_data = {
-            "input": chat_input.input,
-            "output": "",  # Placeholder, will be filled after AI response
-            "threadId": thread_id,
-            "senderId": user_id,
-            "model": "default_model",  # Replace with actual model if applicable
-            "latency": 0,  # Replace with actual latency measurement
-            "token": 23,  # Replace with actual token if applicable
-        }
-
-        # Create chat entry in the database
-        new_chat = await create_chat(chat_data)
-
-        # Fetch chat history for AI response
+        # Create or fetch thread
+        thread_id = await get_or_create_thread(chat_input.thread_id, chat_input.input, user_id)
+        
+        # Fetch chat history and get AI response
         chat_history = await fetch_chat_history(thread_id)
+      
+        ai_response = await get_ai_response(chat_input.input, chat_history, chat_input.thread_id,user_id)
 
-        async def on_complete(generated_text, metadata):
-            if generated_text:
-                asyncio.create_task(update_chat_output(new_chat.id, generated_text))
-
-        # Get AI response
-        ai_response = await chat_stream(chat_input.input, chat_history, on_complete)
         return ai_response
 
     except HTTPException as he:
@@ -132,8 +89,83 @@ async def chat_response(chat_input: CreateChatInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
 
+# Helper Functions
+
+async def handle_existing_chat(chat_input: CreateChatInput):
+    existing_chat = await get_chat_by_id(chat_input.chat_id)
+    if not existing_chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    chat_history = await fetch_chat_history(existing_chat.threadId)
+
+    async def on_complete(generated_text, metadata):
+        if generated_text:
+            updated_chat_data = {
+                "edit_input": chat_input.input,
+                "edit_output": generated_text,
+                "action": "edit"
+            }
+            asyncio.create_task(update_chat(existing_chat.id, updated_chat_data,metadata))
+
+    ai_response = await chat_stream(chat_input.input, chat_history, on_complete)
+    return ai_response
+
+async def get_or_create_thread(thread_id: str, input_text: str, user_id: int):
+    if thread_id:
+        thread = await get_thread_by_id(thread_id)
+        if not thread:
+            thread = await create_thread({"id": thread_id, "title": input_text, "createdById": user_id})
+    else:
+        thread = await create_thread({"title": input_text, "createdById": user_id})
+    
+    return thread.id
+
+async def create_new_chat(input_text: str, thread_id: str, user_id: int,upload_data):
+    
+    chat_data = {
+        "input": input_text,
+        "output": upload_data.get('generated_text'),  # Placeholder for AI response
+        "threadId": thread_id,
+        "senderId": user_id,
+        "model": upload_data.get('metadata').get('model'),  # Replace with actual model if applicable
+        "latency": upload_data.get('metadata').get('latency'),  # Replace with actual latency measurement
+        "token": upload_data.get('metadata').get('tokens'),  # Replace with actual token if applicable
+    }
+    
+    return await create_chat(chat_data)
+
+async def get_ai_response(input_text: str, chat_history, thread_id:str,user_id):
+    async def on_complete(generated_text, metadata):
+        if generated_text:
+            print('generatated text',generated_text)
+            upload_data={}
+            upload_data['metadata'] = metadata
+            upload_data['generated_text']=generated_text
+            asyncio.create_task(create_new_chat(input_text,thread_id,user_id,upload_data))
+
+
+    cancel_event = asyncio.Event()
+    cancellation_events[thread_id] = cancel_event
+    stream=await chat_stream(input_text, chat_history, on_complete,cancel_event)
+    return stream
+
+
+@router.post("/cancel/{thread_id}")
+async def cancel_stream(thread_id: str):
+    """
+    Endpoint to cancel the stream for a specific thread.
+    """
+    if thread_id in cancellation_events:
+        cancellation_events[thread_id].set()  # Trigger the cancellation event
+        return {"message": f"Stream for thread {thread_id} canceled"}
+    else:
+        raise HTTPException(status_code=404, detail=f"Thread {thread_id} not found")
+
+
+
 @router.put("/{chat_id}")
 async def update_existing_chat(chat_id: int, update: UpdateChatInput):
+    
     """
     Update an existing chat message by performing actions like edit, like, or dislike.
     """
@@ -142,7 +174,6 @@ async def update_existing_chat(chat_id: int, update: UpdateChatInput):
         chat = await get_chat_by_id(chat_id)
         if not chat:
             raise HTTPException(status_code=404, detail="Chat not found")
-
         update_data = {
             "action": update.action,
             "edit_text": update.edit_text
