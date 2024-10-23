@@ -49,7 +49,6 @@ async def text_to_speech(request: Input, client_request: Request):
     try:
         chunked_text= chunk_tibetan_text(request.input)
         generated_id=  uuid.uuid4()
-        print(generated_id)
         audio_data =await process_text_chunks(chunked_text)
         file_url = await handle_audio_file(audio_data["audio"])
         client_ip, source_app,city,country = get_client_metadata(client_request)
@@ -66,7 +65,7 @@ async def text_to_speech(request: Input, client_request: Request):
         "city": city,
         "country": country,
         }
-        asyncio.create_task(create_text_to_speech( tts_data))
+        asyncio.create_task(create_text_to_speech(tts_data))
         
         # Return the result
         return {
@@ -86,11 +85,12 @@ async def stream_endpoint(request: Input, client_request: Request):
     client_ip, source_app,city,country = get_client_metadata(client_request)
     token=get_id_token(client_request)
     user_id =await get_user_id(token)
+    generated_id=  uuid.uuid4()
+    
     chunked_text= chunk_tibetan_text(request.input,max_chunk_size=100)
         
  # Define on_complete as an async function to avoid issues
     async def on_complete(output, response_time):
-        generated_id=  uuid.uuid4()
         tts_data = {
              "id":generated_id,
             "input": request.input,
@@ -106,10 +106,10 @@ async def stream_endpoint(request: Input, client_request: Request):
         # Use asyncio to create a task for the asynchronous function
         asyncio.create_task(create_text_to_speech(tts_data))
                  
-    return StreamingResponse(process_text_chunks_stream(chunked_text,volume_increase_db=20,on_complete=on_complete), media_type="text/event-stream")
+    return StreamingResponse(process_text_chunks_stream(chunked_text,volume_increase_db=20,on_complete=on_complete,inference_id=generated_id), media_type="text/event-stream")
 # Helper function to update TTS data after streaming (to be called separately)
 
-async def process_text_chunks_stream(text_chunks, volume_increase_db=20,on_complete=None):
+async def process_text_chunks_stream(text_chunks, volume_increase_db=20,on_complete=None,inference_id=None):
     response_time = 0
     start_time = asyncio.get_event_loop().time()
     urls=[]
@@ -153,7 +153,7 @@ async def process_text_chunks_stream(text_chunks, volume_increase_db=20,on_compl
                     # Yield the file URL for this chunk
                     if file_url:
                         urls.append(file_url)
-                        yield f'data: {json.dumps({"output": file_url,"inference_id":123})}\n\n'
+                        yield f'data: {json.dumps({"output": file_url,"inference_id":inference_id})}\n\n'
                         print(f"Processed chunk {i}: {file_url}")
                     else:
                         print(f"Chunk {i}: No file URL returned from handle_audio_file")
