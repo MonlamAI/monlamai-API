@@ -118,7 +118,8 @@ class Thread(BaseModel):
     createdBy: User
     createdAt: datetime
     updatedAt: datetime
-
+    is_completed:bool
+    show:bool
     # Relationships
     chats: List['Chat'] = []
 

@@ -127,6 +127,7 @@ model Thread {
   createdById Int
   chats       Chat[]    @relation("ThreadChats")
   show        Boolean   @default(true)
+  is_completed    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }

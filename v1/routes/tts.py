@@ -48,11 +48,14 @@ async def text_to_speech(request: Input, client_request: Request):
 
     try:
         chunked_text= chunk_tibetan_text(request.input)
+        generated_id=  uuid.uuid4()
+        print(generated_id)
         audio_data =await process_text_chunks(chunked_text)
         file_url = await handle_audio_file(audio_data["audio"])
         client_ip, source_app,city,country = get_client_metadata(client_request)
         response_time = round(audio_data['response_time'] * 1000, 4)
         tts_data = {
+        "id":generated_id,
         "input": request.input,
         "output": file_url,
         "response_time": response_time,
@@ -63,13 +66,13 @@ async def text_to_speech(request: Input, client_request: Request):
         "city": city,
         "country": country,
         }
-        data= await create_text_to_speech( tts_data)
+        asyncio.create_task(create_text_to_speech( tts_data))
         
         # Return the result
         return {
             "success": True,
             "output": file_url,
-            "id": data.id,
+            "id": generated_id,
             "responseTime": response_time,
         }
 

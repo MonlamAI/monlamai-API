@@ -4,7 +4,8 @@ async def create_chat(data: dict):
     chat = await db.chat.create(data=data)
     return chat
 
-async def update_chat(chat_id: int, data: dict):
+async def update_chat(chat_id: int, data: dict,metadata: dict=None):
+    
     update_data = {}
     action = data.get("action")
     edit_text = data.get("edit_input")
@@ -18,6 +19,10 @@ async def update_chat(chat_id: int, data: dict):
         update_data["edit_input"] = edit_text # or edit_output based on your requirements
         update_data["edit_output"] = edit_response # or edit_output based on your requirements
 
+    if metadata:
+        update_data["latency"] = metadata['latency']
+        update_data["model"]= metadata['model']
+        update_data["token"]= metadata['tokens']
     if not update_data:
         return None
 
@@ -33,10 +38,17 @@ async def get_chat_by_id(chat_id: int):
     )
     return chat
 
-async def update_chat_output(chat_id: int, output: str):
+async def update_chat_output(chat_id: int, output: str,metadata: dict):
+    update_data = {"output": output}
+    if metadata:
+        update_data["latency"] = metadata['latency']
+        update_data["model"]= metadata['model']
+        update_data["token"]= metadata['tokens']
+ 
+    
     updated_chat = await db.chat.update(
         where={"id": chat_id},
-        data={"output": output}
+        data=update_data
     )
     return updated_chat
 
