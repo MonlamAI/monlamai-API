@@ -90,8 +90,9 @@ async def stream_endpoint(request: Input, client_request: Request):
         
  # Define on_complete as an async function to avoid issues
     async def on_complete(output, response_time):
-    
+        generated_id=  uuid.uuid4()
         tts_data = {
+             "id":generated_id,
             "input": request.input,
             "output": output,
             "response_time": response_time,

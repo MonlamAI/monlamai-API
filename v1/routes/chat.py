@@ -73,7 +73,7 @@ async def chat_response(chat_input: CreateChatInput):
     try:
         # Check if updating an existing chat
         if chat_input.chat_id:
-            return await handle_existing_chat(chat_input)
+            return await handle_existing_chat(chat_input,chat_input.thread_id)
 
         # Create or fetch thread
         thread_id = await get_or_create_thread(chat_input.thread_id, chat_input.input, user_id)
@@ -92,13 +92,12 @@ async def chat_response(chat_input: CreateChatInput):
 
 # Helper Functions
 
-async def handle_existing_chat(chat_input: CreateChatInput):
+async def handle_existing_chat(chat_input: CreateChatInput,thread_id):
     existing_chat = await get_chat_by_id(chat_input.chat_id)
     if not existing_chat:
         raise HTTPException(status_code=404, detail="Chat not found")
 
     chat_history = await fetch_chat_history(existing_chat.threadId)
-
     async def on_complete(generated_text, metadata):
         if generated_text:
             updated_chat_data = {
@@ -108,8 +107,10 @@ async def handle_existing_chat(chat_input: CreateChatInput):
             }
             await update_chat(existing_chat.id, updated_chat_data,metadata)
 
-    ai_response = await chat_stream(chat_input.input, chat_history, on_complete)
-    return ai_response
+    cancel_event = asyncio.Event()
+    cancellation_events[thread_id] = cancel_event
+    stream = await chat_stream(chat_input.input, chat_history, on_complete,cancel_event)
+    return stream
 
 async def get_or_create_thread(thread_id: str, input_text: str, user_id: int):
     if thread_id:

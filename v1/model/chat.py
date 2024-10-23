@@ -9,7 +9,6 @@ async def create_chat(data: dict):
 import json
 
 async def update_chat(chat_id: int, data: dict, metadata: dict = None):
-    
     update_data = {}
     action = data.get("action")
     edit_text = data.get("edit_input")

@@ -65,6 +65,7 @@ def chat(user_input, chat_history=None):
 
 
 async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
+    print(text)
     # Retrieve environment variables
     url = os.getenv("LLM_MODEL_URL")
     url = f"{url}/generate_stream"
