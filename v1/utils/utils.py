@@ -47,7 +47,8 @@ def get_geolocation(ip_address):
 async def get_user_id(token: str):
     if token:
         user = await verify(token)
-        if user:
-            user_id = user.id  # Access id using dot notation
-            return user_id
+        if hasattr(user, 'id'):  # Check if user has an id attribute
+            return user.id  # Return the id if it exists
+        elif isinstance(user, str):  # If user is a string, return it
+            return user
     return None
