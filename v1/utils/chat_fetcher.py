@@ -131,7 +131,6 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
                                     valid = parsed_data.get("response",True) 
                                     
                                     
-                                    
                                     if generated_text:
                                         yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata,'valid':valid})}\n\n"
                                         return
@@ -151,6 +150,6 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
             # Ensure on_complete is called even if an error occurs
             if on_complete:
                 generated_text = generated_text or final_text
-                await on_complete(generated_text or '', metadata )
+                asyncio.create_task(on_complete(generated_text or '', metadata ))
 
     return StreamingResponse(event_stream(), media_type="text/event-stream;charset=UTF-8;")

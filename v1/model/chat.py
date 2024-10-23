@@ -6,7 +6,9 @@ async def create_chat(data: dict):
     chat = await db.chat.create(data=data)
     return chat
 
-async def update_chat(chat_id: int, data: dict,metadata: dict=None):
+import json
+
+async def update_chat(chat_id: int, data: dict, metadata: dict = None):
     
     update_data = {}
     action = data.get("action")
@@ -18,13 +20,15 @@ async def update_chat(chat_id: int, data: dict,metadata: dict=None):
     elif action == "dislike":
         update_data["disliked_count"] = {"increment": 1}
     elif action == "edit" and edit_text:
-        update_data["edit_input"] = edit_text # or edit_output based on your requirements
-        update_data["edit_output"] = edit_response # or edit_output based on your requirements
+        update_data["edit_input"] = edit_text
+        update_data["edit_output"] = edit_response
 
     if metadata:
-        update_data["latency"] = metadata['latency']
-        update_data["model"]= metadata['model']
-        update_data["token"]= json.dump(metadata['tokens'])
+        update_data["latency"] = metadata.get('latency')
+        update_data["model"] = metadata.get('model')
+        # Stringify the 'tokens' object and save it
+        update_data["token"] = json.dumps(metadata.get('tokens', {}))
+
     if not update_data:
         return None
 
@@ -33,6 +37,7 @@ async def update_chat(chat_id: int, data: dict,metadata: dict=None):
         data=update_data
     )
     return chat
+
 
 async def get_chat_by_id(chat_id: int):   
     chat = await db.chat.find_unique(
