@@ -7,6 +7,7 @@ from v1.model.thread import create_thread, get_thread_by_id, get_threads, delete
 from v1.model.chat import create_chat, update_chat_output, fetch_chat_history, update_chat, get_chat_by_id
 from v1.utils.chat_fetcher import chat, chat_stream
 from v1.model.user import get_user_by_email
+import json
 import asyncio
 
 router = APIRouter(tags=["chat"])
@@ -72,7 +73,7 @@ async def chat_response(chat_input: CreateChatInput):
     try:
         # Check if updating an existing chat
         if chat_input.chat_id:
-            return await handle_existing_chat(chat_input)
+            return await handle_existing_chat(chat_input,chat_input.thread_id)
 
         # Create or fetch thread
         thread_id = await get_or_create_thread(chat_input.thread_id, chat_input.input, user_id)
@@ -91,13 +92,12 @@ async def chat_response(chat_input: CreateChatInput):
 
 # Helper Functions
 
-async def handle_existing_chat(chat_input: CreateChatInput):
+async def handle_existing_chat(chat_input: CreateChatInput,thread_id):
     existing_chat = await get_chat_by_id(chat_input.chat_id)
     if not existing_chat:
         raise HTTPException(status_code=404, detail="Chat not found")
 
     chat_history = await fetch_chat_history(existing_chat.threadId)
-
     async def on_complete(generated_text, metadata):
         if generated_text:
             updated_chat_data = {
@@ -105,10 +105,12 @@ async def handle_existing_chat(chat_input: CreateChatInput):
                 "edit_output": generated_text,
                 "action": "edit"
             }
-            asyncio.create_task(update_chat(existing_chat.id, updated_chat_data,metadata))
+            await update_chat(existing_chat.id, updated_chat_data,metadata)
 
-    ai_response = await chat_stream(chat_input.input, chat_history, on_complete)
-    return ai_response
+    cancel_event = asyncio.Event()
+    cancellation_events[thread_id] = cancel_event
+    stream = await chat_stream(chat_input.input, chat_history, on_complete,cancel_event)
+    return stream
 
 async def get_or_create_thread(thread_id: str, input_text: str, user_id: int):
     if thread_id:
@@ -121,7 +123,7 @@ async def get_or_create_thread(thread_id: str, input_text: str, user_id: int):
     return thread.id
 
 async def create_new_chat(input_text: str, thread_id: str, user_id: int,upload_data):
-    
+    token=upload_data.get('metadata').get('tokens')
     chat_data = {
         "input": input_text,
         "output": upload_data.get('generated_text'),  # Placeholder for AI response
@@ -129,15 +131,15 @@ async def create_new_chat(input_text: str, thread_id: str, user_id: int,upload_d
         "senderId": user_id,
         "model": upload_data.get('metadata').get('model'),  # Replace with actual model if applicable
         "latency": upload_data.get('metadata').get('latency'),  # Replace with actual latency measurement
-        "token": upload_data.get('metadata').get('tokens'),  # Replace with actual token if applicable
+        "token":     json.dumps(token)
+,  # Replace with actual token if applicable
     }
-    
-    return await create_chat(chat_data)
+    output=await create_chat(chat_data)
+    return output
 
 async def get_ai_response(input_text: str, chat_history, thread_id:str,user_id):
     async def on_complete(generated_text, metadata):
         if generated_text:
-            print('generatated text',generated_text)
             upload_data={}
             upload_data['metadata'] = metadata
             upload_data['generated_text']=generated_text
@@ -148,6 +150,9 @@ async def get_ai_response(input_text: str, chat_history, thread_id:str,user_id):
     cancellation_events[thread_id] = cancel_event
     stream=await chat_stream(input_text, chat_history, on_complete,cancel_event)
     return stream
+
+
+
 
 
 @router.post("/cancel/{thread_id}")
