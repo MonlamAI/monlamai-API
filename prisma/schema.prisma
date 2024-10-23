@@ -146,7 +146,7 @@ model Chat {
   disliked_count Int @default(0)
   model          String
   latency        Int
-  token          Int
+  token          String?
   edit_input     String?
   edit_output    String?
 }
