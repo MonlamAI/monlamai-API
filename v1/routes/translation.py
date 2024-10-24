@@ -93,7 +93,7 @@ async def translate(request:Input, client_request: Request):
            translated = await translator(text, request.target)
            translated_text+=translated['translation']
         # save translations
-        generated_id=  uuid.uuid4()
+        generated_id=  str(uuid.uuid4())
         input_lang = detect_language(request.input) or ""
         client_ip, source_app, city,country = get_client_metadata(client_request)
         translation_data = {

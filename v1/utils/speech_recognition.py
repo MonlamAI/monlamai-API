@@ -1,9 +1,7 @@
 import os
-import json
 import httpx
 from v1.utils.translator import headers
 import asyncio
-import aiohttp
 
 
 async def speech_to_text_tibetan(audio:str) -> dict:
@@ -40,7 +38,6 @@ async def speech_to_text_tibetan(audio:str) -> dict:
 
 async def speech_to_text_english(audio:str) -> dict:
     
-    """Convert speech to text using the STT model."""
     
     MODEL_AUTH = os.getenv('MODEL_AUTH')
     api_url = os.getenv('STT_MODEL_URL_ENGLISH')
