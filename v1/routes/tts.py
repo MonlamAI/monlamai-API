@@ -74,7 +74,6 @@ async def text_to_speech(request: Input, client_request: Request):
             "id": generated_id,
             "responseTime": response_time,
         }
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Audio failed: {str(e)}")
 
@@ -85,14 +84,14 @@ async def stream_endpoint(request: Input, client_request: Request):
     client_ip, source_app,city,country = get_client_metadata(client_request)
     token=get_id_token(client_request)
     user_id =await get_user_id(token)
-    generated_id=  uuid.uuid4()
-    
+    generated_id =  str(uuid.uuid4())
     chunked_text= chunk_tibetan_text(request.input,max_chunk_size=100)
         
  # Define on_complete as an async function to avoid issues
     async def on_complete(output, response_time):
+        print(generated_id)
         tts_data = {
-             "id":generated_id,
+            "id":generated_id,
             "input": request.input,
             "output": output,
             "response_time": response_time,
@@ -196,7 +195,7 @@ async def update_ocr(id: int, action: str = Query(..., description="Action to pe
     if not updated_record:
         raise HTTPException(status_code=404, detail="Record not found")
 
-    return {"message": f"Record {action}d successfully", "data": updated_record}
+    return {"message": f"Record {action} successfully", "data": updated_record}
 
 
 async def handle_audio_file(base64_audio):
