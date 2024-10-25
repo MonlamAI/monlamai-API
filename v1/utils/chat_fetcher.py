@@ -86,7 +86,6 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
             headers = {
             'Accept': 'application/json'
             }
-            print(body)
             async with httpx.AsyncClient() as client:
                 async with client.stream("POST", url, json=body, headers=headers) as response:
                     try:
