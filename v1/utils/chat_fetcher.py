@@ -31,7 +31,7 @@ def chat(user_input, chat_history=None):
         chat_history = []
 
     # Prepare query parameters
-    params = {
+    body = {
         'user_input': user_input,
         'chat_history': json.dumps(chat_history)  # Serialize list to JSON string
     }
@@ -41,7 +41,7 @@ def chat(user_input, chat_history=None):
     
     try:
         # Make the POST request with empty data
-        response = requests.post(url, params=params, headers=headers, data='')
+        response = requests.post(url, json=body, headers=headers, data='')
 
         # Raise an HTTPError if the response was unsuccessful
         response.raise_for_status()
@@ -79,7 +79,7 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
         buffer = ''  # Initialize buffer for partial data
 
         try:
-            params = {
+            body = {
                 "user_input": text,
                 "chat_history": json.dumps(history)  # Ensure history is passed as a JSON string
             }
@@ -89,7 +89,7 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
             }
 
             async with httpx.AsyncClient() as client:
-                async with client.stream("POST", url, params=params, headers=headers) as response:
+                async with client.stream("POST", url, json=body, headers=headers) as response:
                     try:
                         async for chunk in response.aiter_text():
                             if cancel_event.is_set():  # Check if the cancel event is triggered

@@ -200,6 +200,7 @@ async def get_thread(thread_id: str):
     Retrieve a specific thread by ID.
     """
     try:
+        
         thread = await get_thread_by_id(thread_id)
         if not thread:
             raise HTTPException(status_code=404, detail="Thread not found")
