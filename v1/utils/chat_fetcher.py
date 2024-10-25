@@ -83,21 +83,20 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
                 "user_input": text,
                 "chat_history": json.dumps(history)  # Ensure history is passed as a JSON string
             }
-
             headers = {
             'Accept': 'application/json'
             }
-
+            print(body)
             async with httpx.AsyncClient() as client:
                 async with client.stream("POST", url, json=body, headers=headers) as response:
                     try:
                         async for chunk in response.aiter_text():
+                            print(chunk)
                             if cancel_event.is_set():  # Check if the cancel event is triggered
                                 
                                raise asyncio.CancelledError("Stream canceled by user.")
                             # Accumulate chunks in the buffer
                             buffer += chunk
-                            
                             # Process all complete lines in the buffer
                             while '\n' in buffer:
                                 line, buffer = buffer.split('\n', 1)
