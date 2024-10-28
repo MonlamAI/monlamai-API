@@ -31,7 +31,6 @@ async def get_total_threads_count(user_id: str):
     threads_count = await db.thread.count(
         where={"createdById": user_id,"show":True},
     )
-    print(threads_count)
     return threads_count
 
 async def delete_thread_by_id(thread_id: int):
