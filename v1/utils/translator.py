@@ -64,7 +64,6 @@ async def translator(text: str, direction: str ):
                 },
                 headers=headers,
             )
-            print(response)
         if response.status_code != 200:
             raise Exception("status code not 200")
         

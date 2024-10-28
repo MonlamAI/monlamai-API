@@ -14,11 +14,10 @@ async def get_thread_by_id(thread_id: int):
 
 
 
-async def get_threads(user_email: str, limit: int = 10, offset: int = 0):
-    user = await get_user_by_email(user_email)
-    user_id = user.id
+async def get_threads(user_id: str, limit: int = 10, offset: int = 0):
+   
     threads = await db.thread.find_many(
-        where={"createdById": user_id},
+        where={"createdById": user_id, "show":True},
         include={"chats": True},
         order={"createdAt": "desc"},
         skip=offset,   # This is the offset parameter for pagination
@@ -27,7 +26,13 @@ async def get_threads(user_email: str, limit: int = 10, offset: int = 0):
     
     return threads
 
-
+async def get_total_threads_count(user_id: str):
+    
+    threads_count = await db.thread.count(
+        where={"createdById": user_id,"show":True},
+    )
+    print(threads_count)
+    return threads_count
 
 async def delete_thread_by_id(thread_id: int):
     # Mock implementation - Replace with actual database call

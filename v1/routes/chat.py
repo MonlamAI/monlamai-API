@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from v1.utils.utils import get_client_metadata
-from v1.model.thread import create_thread, get_thread_by_id, get_threads, delete_thread_by_id
+from v1.model.thread import create_thread, get_thread_by_id, get_threads, delete_thread_by_id,get_total_threads_count
 from v1.model.chat import create_chat, update_chat_output, fetch_chat_history, update_chat, get_chat_by_id
 from v1.utils.chat_fetcher import chat, chat_stream
 from v1.model.user import get_user_by_email
@@ -247,12 +247,15 @@ async def list_threads_post(user_email: str, pagination: PaginationRequest):
     try:
         # Calculate the offset based on the page number and limit
         offset = (pagination.page - 1) * pagination.limit
-        threads = await get_threads(user_email, limit=pagination.limit, offset=offset)
-    
+        user = await get_user_by_email(user_email)
+        user_id = user.id
+        threads = await get_threads(user_id, limit=pagination.limit, offset=offset)
+        total= await get_total_threads_count(user_id)
         return {
             "page": pagination.page,
             "limit": pagination.limit,
-            "threads": threads
+            "threads": threads,
+            "count":total
         }
         
     except Exception as e:
