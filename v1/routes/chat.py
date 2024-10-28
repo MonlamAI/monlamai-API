@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException,Query
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
@@ -221,16 +221,43 @@ async def delete_thread(thread_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Deleting thread failed: {str(e)}")
 
-@router.get("/threads/{user_email}")
-async def list_threads(user_email: str):
+# @router.get("/threads/{user_email}")
+# async def list_threads(user_email: str):
+#     """
+#     Retrieve all threads.
+#     """
+#     try:
+#         threads = await get_threads(user_email)
+#         return threads
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Fetching threads failed: {str(e)}")
+
+class PaginationRequest(BaseModel):
+    page: int = 1  # Default to page 1
+    limit: int = 10  # Default limit to 10 items per page
+
+@router.post("/threads/{user_email}")
+async def list_threads_post(user_email: str, pagination: PaginationRequest):
     """
-    Retrieve all threads.
+    Retrieve paginated threads using page number and limit provided in the body.
+    
+    - **page**: The page number.
+    - **limit**: Number of threads to retrieve per page.
     """
     try:
-        threads = await get_threads(user_email)
-        return threads
+        # Calculate the offset based on the page number and limit
+        offset = (pagination.page - 1) * pagination.limit
+        threads = await get_threads(user_email, limit=pagination.limit, offset=offset)
+    
+        return {
+            "page": pagination.page,
+            "limit": pagination.limit,
+            "threads": threads
+        }
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fetching threads failed: {str(e)}")
+
 
 @router.get("/{chat_id}", response_model=ChatOutput)
 async def get_chat(chat_id: int):
