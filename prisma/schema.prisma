@@ -40,6 +40,13 @@ model User {
     chats       Chat[]    @relation("UserChats")
 }
 
+model WaitList {
+    id        Int      @id @default(autoincrement())
+    name      String
+    email     String   @unique
+    createdAt DateTime @default(now())
+}
+
 model Translation {
     id           String   @id @default(uuid())
     input        String
