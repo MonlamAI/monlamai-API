@@ -40,21 +40,9 @@ async def check_translation(client_request: Request):
        text="hi hello how are you"
        direction="bo"
        try:
-            translated = await translator(
-            text, direction
-              )
+            translated = await translator(text, direction)
             client_ip, source_app, city,country = get_client_metadata(client_request)
-            mp.people_set('2', {'$name'  : 'tenzin kunsang',
-                          '$email' : 'tenkus47@gmail.com',
-                          'plan' : 'Premium'
-                          # Add anything else about the user here
-                          })
-            mp.track('2','OCR',{
-                 '$city': 'Delhi',
-                 '$Country': 'India',
-                 '$ip': '12312,.1231.2312',
-                 '$os': 'Windows',
-            })
+           
             return {
             "success": True,
             "translation": translated['translation'],

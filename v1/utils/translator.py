@@ -68,9 +68,9 @@ async def translator(text: str, direction: str ):
         if response.status_code != 200:
             raise Exception("status code not 200")
         
-        response_data = response.json()
+        translation = response.text.strip()
         response_time = round((time.time() - start_time) * 1000, 4)
-        received_data = response_data[0].get('generated_text', '')
+        received_data = translation
     
     except Exception as e:
         raise Exception(e) from e
@@ -84,7 +84,7 @@ async def translator(text: str, direction: str ):
 async def translator_stream(text: str, direction: str,inferenceID, on_complete=None):
     # Retrieve environment variables
     start_time = time.time()
-    url = f"{LLM_MODEL_URL}/generate_stream"
+    url = f"{LLM_MODEL_URL}/translation_generate_stream"
      # Retrieve the Origin and Referer headers
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
@@ -102,7 +102,8 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
     async def event_stream():
         
         try:
-            language = supported_languages.get(direction, "Unknown")
+            language = 'Tibetan' if direction == 'bo' else 'English'
+
             
             body = {
                 "inputs": text,
@@ -116,15 +117,16 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
                         data = chunk.decode('utf-8').strip()
                         if not data:
                             continue
-
+                        
                         for line in data.split('\n'):
+                            print(line)
                             if line.startswith("data:"):
                                 json_data = line[len("data:"):].strip()
                                 if not json_data:
                                     continue
 
                                 parsed_data = json.loads(json_data)
-                                text_value = parsed_data.get("token", {}).get("text")
+                                text_value = parsed_data.get("text")
                                 generated_text = parsed_data.get("generated_text")
                                
                                 if text_value:
