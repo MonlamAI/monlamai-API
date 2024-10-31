@@ -124,8 +124,11 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
                                 json_data = line[len("data:"):].strip()
                                 if not json_data:
                                     continue
-
-                                parsed_data = json.loads(json_data)
+                                try:
+                                    parsed_data = json.loads(json_data)
+                                except json.JSONDecodeError as e:
+                                    print(f"Error decoding JSON: {str(e)}")
+                                    continue
                                 text_value = parsed_data.get("text", "")
                                 generated_text = parsed_data.get("generated_text")
                               
