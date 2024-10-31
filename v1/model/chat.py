@@ -71,6 +71,6 @@ async def fetch_chat_history(thread_id: str):
         role = "user" if chat.senderId == thread.createdById else "system"
         chat_history.append({"role": role, "content": chat.input})
         if chat.output:
-            chat_history.append({"role": role, "content": chat.output})
+            chat_history.append({"role": 'system', "content": chat.output})
     
     return chat_history
