@@ -12,10 +12,11 @@ from mixpanel import Mixpanel
 load_dotenv()
 MODEL_AUTH = os.getenv('MODEL_AUTH')
 MT_MODEL_URL = os.getenv('MT_MODEL_URL')
+LLM_MODEL_URL= os.getenv('LLM_MODEL_URL')
 MIXPANEL_TOKEN = os.getenv('MIXPANEL_TOKEN')
 headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {MODEL_AUTH}",
+        # "Authorization": f"Bearer {MODEL_AUTH}",
         "Access-Control-Allow-Origin": "*",
     }
 
@@ -36,7 +37,7 @@ def clean_text(original_text):
     
 
 async def translator(text: str, direction: str ):
-    url = MT_MODEL_URL
+    url = LLM_MODEL_URL
     received_data = ""
     response_time = 0
     is_tibetan:bool=detect_language(text)==direction
@@ -49,7 +50,9 @@ async def translator(text: str, direction: str ):
         if translation and translation.strip():
            return {"translation": translation, "responseTime": response_time}
     
-    text_data = clean_text(f'<2{direction}>{text}')
+   
+
+    language = 'Tibetan' if direction == 'bo' else 'English'
     try:
         start_time = time.time()  # Record start time
         
@@ -57,10 +60,8 @@ async def translator(text: str, direction: str ):
             response = await client.post(
                 url,
                 json={
-                    "inputs": text_data,
-                    "parameters": {
-                        "max_new_tokens": 256,
-                    },
+                    "inputs": text,
+                    "lang":language
                 },
                 headers=headers,
             )
@@ -82,13 +83,11 @@ async def translator(text: str, direction: str ):
 
 async def translator_stream(text: str, direction: str,inferenceID, on_complete=None):
     # Retrieve environment variables
-    text_data =clean_text(f'<2{direction}>{text}')
     start_time = time.time()
-    url = f"{MT_MODEL_URL}/generate_stream"
+    url = f"{LLM_MODEL_URL}/generate_stream"
      # Retrieve the Origin and Referer headers
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
-    mp = Mixpanel("YOUR_TOKEN")
     # If the text has two or fewer words, try to get the translation from the file
     if word_count <= 2:
         translation = get_translation_from_file(text, direction)
@@ -101,10 +100,13 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
 
     # Define the event stream generator
     async def event_stream():
+        
         try:
+            language = supported_languages.get(direction, "Unknown")
+            
             body = {
-                "inputs": text_data,
-                "parameters": {"max_new_tokens": 256},
+                "inputs": text,
+                "lang":language
             }
 
             async with httpx.AsyncClient() as client:

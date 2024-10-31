@@ -68,9 +68,9 @@ async def fetch_chat_history(thread_id: str):
     
     chat_history = []
     for chat in thread.chats:
-        role = "human" if chat.senderId == thread.createdById else "ai"
+        role = "user" if chat.senderId == thread.createdById else "system"
         chat_history.append({"role": role, "content": chat.input})
         if chat.output:
-            chat_history.append({"role": "ai", "content": chat.output})
+            chat_history.append({"role": role, "content": chat.output})
     
     return chat_history

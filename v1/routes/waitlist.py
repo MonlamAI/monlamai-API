@@ -7,6 +7,8 @@ class UserCreateSchema(BaseModel):
     email: EmailStr
     name: str
 
+
+
 @router.post("/create")
 async def create_wait_list(user_data: UserCreateSchema):
     user_id = await create_waitlist(user_data.dict())

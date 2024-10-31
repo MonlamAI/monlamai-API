@@ -45,6 +45,7 @@ model WaitList {
     name      String
     email     String   @unique
     createdAt DateTime @default(now())
+    active    Boolean  @default(false)
 }
 
 model Translation {
