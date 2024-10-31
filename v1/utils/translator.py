@@ -126,9 +126,10 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
                                     continue
 
                                 parsed_data = json.loads(json_data)
-                                text_value = parsed_data.get("text")
+                                text_value = parsed_data.get("text", "")
                                 generated_text = parsed_data.get("generated_text")
-                               
+                                text_value = text_value.replace("<end_of_turn>", "").replace("<eos>", "")
+                                
                                 if text_value:
                                     yield f"data: {json.dumps({'text': text_value,'id':inferenceID})}\n\n"
 
