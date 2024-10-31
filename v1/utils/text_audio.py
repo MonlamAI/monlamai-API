@@ -1,8 +1,17 @@
 import os
 import json
 import httpx
-from v1.utils.translator import headers
 import asyncio
+
+
+MODEL_AUTH = os.getenv('MODEL_AUTH')
+
+
+headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {MODEL_AUTH}",
+        "Access-Control-Allow-Origin": "*",
+    }
 
 async def tibetan_synthesizer(text: str):
     """Synthesize text and return the audio data as a base64-encoded string."""
