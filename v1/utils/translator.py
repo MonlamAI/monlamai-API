@@ -68,7 +68,7 @@ async def translator(text: str, direction: str ):
         if response.status_code != 200:
             raise Exception("status code not 200")
         
-        translation = response.text.strip()
+        translation = response.text
         response_time = round((time.time() - start_time) * 1000, 4)
         received_data = translation
     
@@ -128,8 +128,7 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
                                 parsed_data = json.loads(json_data)
                                 text_value = parsed_data.get("text", "")
                                 generated_text = parsed_data.get("generated_text")
-                                text_value = text_value.replace("<end_of_turn>", "").replace("<eos>", "")
-                                
+                              
                                 if text_value:
                                     yield f"data: {json.dumps({'text': text_value,'id':inferenceID})}\n\n"
 
