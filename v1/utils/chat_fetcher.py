@@ -130,6 +130,7 @@ async def chat_stream(text: str, history=[], on_complete=None,cancel_event={}):
                                     
                                     
                                     if generated_text:
+                                        
                                         yield f"data: {json.dumps({'generated_text': generated_text, 'metadata': metadata,'valid':valid})}\n\n"
                                         return
                     except asyncio.CancelledError as e:

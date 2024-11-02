@@ -45,10 +45,10 @@ async def translator(text: str, direction: str ):
     
     if is_tibetan:
          return {"translation": text, "responseTime": 0}
-    if word_count <= 3:
-        translation = get_translation_from_file(text,direction)
-        if translation and translation.strip():
-           return {"translation": translation, "responseTime": response_time}
+    # if word_count <= 3:
+    #     translation = get_translation_from_file(text,direction)
+    #     if translation and translation.strip():
+    #        return {"translation": translation, "responseTime": response_time}
     
    
 
@@ -89,14 +89,14 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
     # If the text has two or fewer words, try to get the translation from the file
-    if word_count <= 2:
-        translation = get_translation_from_file(text, direction)
-        if translation and translation.strip():  # Only stream if a translation is found
-            async def short_event_stream():
-                yield f"data: {json.dumps({'generated_text': translation,'id':inferenceID})}\n\n"
-                if on_complete:
-                    await on_complete(translation, 0)
-            return StreamingResponse(short_event_stream(), media_type="text/event-stream")
+    # if word_count <= 2:
+    #     translation = get_translation_from_file(text, direction)
+    #     if translation and translation.strip():  # Only stream if a translation is found
+    #         async def short_event_stream():
+    #             yield f"data: {json.dumps({'generated_text': translation,'id':inferenceID})}\n\n"
+    #             if on_complete:
+    #                 await on_complete(translation, 0)
+    #         return StreamingResponse(short_event_stream(), media_type="text/event-stream")
 
     # Define the event stream generator
     async def event_stream():
@@ -119,7 +119,6 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
                             continue
                         
                         for line in data.split('\n'):
-                            print(line)
                             if line.startswith("data:"):
                                 json_data = line[len("data:"):].strip()
                                 if not json_data:
@@ -138,6 +137,7 @@ async def translator_stream(text: str, direction: str,inferenceID, on_complete=N
                                 # Yield the generated text as an SSE event and end the stream
                                 if generated_text:
                                     yield f"data: {json.dumps({'generated_text': generated_text,'id':inferenceID})}\n\n"
+                                   
                                     return
         except Exception as e:
             yield f"event: error\ndata: Stream error: {str(e)}\n\n"
