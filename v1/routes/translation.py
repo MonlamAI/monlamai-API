@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException,Request,Query,BackgroundTasks
-from v1.utils.translator import translator
-from v1.utils.translator import translator_stream
+from v1.utils.translator import translator_llm,translator_mt,translator_stream_llm,translator_stream_mt
 from typing import Optional
 from pydantic import BaseModel
 from v1.utils.language_detect import detect_language
@@ -40,7 +39,7 @@ async def check_translation(client_request: Request):
        text="hi hello how are you"
        direction="bo"
        try:
-            translated = await translator(text, direction)
+            translated = await translator_mt(text, direction)
             client_ip, source_app, city,country = get_client_metadata(client_request)
            
             return {
@@ -50,22 +49,6 @@ async def check_translation(client_request: Request):
             }
     
        except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
-
-
-@router.post("/proxy")
-@limiter.exempt
-async def proxy(request: Input):
-    try:
-        translated = await translator(request.input, request.target)
-        # save translations
-        return {
-            "success": True,
-            "translation": translated['translation'],
-            "responseTime": translated['responseTime'],
-        }
-    
-    except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/")
@@ -78,7 +61,7 @@ async def translate(request:Input, client_request: Request):
         chunked_text= chunk_text(request.input,lang,50)
         translated_text=""
         for text in chunked_text:
-           translated = await translator(text, request.target)
+           translated = await translator_llm(text, request.target)
            translated_text+=translated['translation']
         # save translations
         generated_id=  str(uuid.uuid4())
@@ -144,7 +127,7 @@ async def stream_translate(request: Input, client_request: Request):
                  asyncio.create_task(create_translation(translation_data))
                  
         # Await the streaming translation with the on_complete callback
-        translated = await translator_stream(
+        translated = await translator_stream_llm(
             request.input, 
             request.target,
             inference_id,  # Pass the inference ID
@@ -156,6 +139,95 @@ async def stream_translate(request: Input, client_request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
+
+
+@router.post("/mt")
+
+async def translate(request:Input, client_request: Request):
+    token=get_id_token(client_request)
+    user_id =await get_user_id(token)
+    lang=detect_language(request.input)
+    try:
+        chunked_text= chunk_text(request.input,lang,50)
+        translated_text=""
+        for text in chunked_text:
+           translated = await translator_mt(text, request.target)
+           translated_text+=translated['translation']
+        # save translations
+        generated_id=  uuid.uuid4()
+        input_lang = detect_language(request.input) or ""
+        client_ip, source_app, city,country = get_client_metadata(client_request)
+        translation_data = {
+                            "id":generated_id,
+                            "input": request.input, 
+                            "output": translated_text,  
+                            "input_lang": input_lang, 
+                            "output_lang": request.target, 
+                            "response_time": translated['responseTime'],  
+                            "ip_address": client_ip,
+                            "version": "1.0.0",                        
+                            "source_app": source_app,
+                            "user_id": user_id,  
+                            "city": city,
+                            "country": country,
+                            }
+       
+        asyncio.create_task(create_translation(translation_data))
+        
+        return {
+            "success": True,
+            "id":generated_id,
+            "translation": translated_text,
+            "responseTime": translated['responseTime'],
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+
+
+@router.post("/mt/stream")
+async def stream_translate(request: Input, client_request: Request):
+    token = get_id_token(client_request)
+    user_id = await get_user_id(token)
+    inference_id =  str(uuid.uuid4())
+    if not request.input or not request.target:
+        raise HTTPException(status_code=400, detail="Missing input or target field.")
+
+    try:
+        # Define the on_complete callback as an async function
+        async def on_complete(generated_text, response_time):
+            # Schedule the database save in the background
+            if generated_text:
+                 input_lang = detect_language(request.input)
+                 client_ip, source_app, city, country = get_client_metadata(client_request)
+                 translation_data = {
+                            "id": inference_id,
+                            "input": request.input, 
+                            "output": generated_text,  
+                            "input_lang": input_lang, 
+                            "output_lang": request.target, 
+                            "response_time": response_time,  
+                            "ip_address": client_ip,
+                            "version": "1.0.0",                        
+                            "source_app": source_app,
+                            "user_id": user_id,  
+                            "city": city,
+                            "country": country,
+                            }
+                 asyncio.create_task(create_translation(translation_data))
+                 
+        # Await the streaming translation with the on_complete callback
+        translated = await translator_stream_mt(
+            request.input, 
+            request.target,
+            inference_id,  # Pass the inference ID
+            on_complete=on_complete  # Pass the async function
+        )
+        
+        return translated
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 
 @router.put("/{translation_id}")
