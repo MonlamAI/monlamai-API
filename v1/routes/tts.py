@@ -17,6 +17,7 @@ import asyncio
 from fastapi.responses import StreamingResponse, HTMLResponse
 import json
 from io import BytesIO
+from v1.utils.mixPanel_track import track_signup_input,track_user_input
 
 router = APIRouter()
 class Input(BaseModel):
@@ -65,6 +66,23 @@ async def text_to_speech(request: Input, client_request: Request):
         "city": city,
         "country": country,
         }
+         
+        mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'TextToSpeech',
+                    "input": request.input,
+                    "output": file_url,
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": response_time,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                }
+        if user_id is None:
+            mixPanel_data['user_id'] = "random_user"
+        tracked_event = track_user_input(mixPanel_data, client_request)
+        
         asyncio.create_task(create_text_to_speech(tts_data))
         
         # Return the result
@@ -102,6 +120,21 @@ async def stream_endpoint(request: Input, client_request: Request):
             "country": country,
         }
         # Use asyncio to create a task for the asynchronous function
+        mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'TextToSpeech',
+                    "input": request.input,
+                    "output": output,
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": response_time,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                }
+        if user_id is None:
+            mixPanel_data['user_id'] = "random_user"
+        tracked_event = track_user_input(mixPanel_data, client_request)
         asyncio.create_task(create_text_to_speech(tts_data))
                  
     return StreamingResponse(process_text_chunks_stream(chunked_text,volume_increase_db=20,on_complete=on_complete,inference_id=generated_id), media_type="text/event-stream")

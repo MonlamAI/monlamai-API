@@ -101,13 +101,16 @@ class EventTracker:
         """
         # Prepare base properties
         properties = event_data_properties or {}
+        print('before_event_properties:',properties)
         
         # Add device details if user agent is provided
         if user_agent_string:
             device_details = self._get_device_details(user_agent_string)
             properties.update(device_details)
         
+        
         # Track event in Mixpanel
+        print('event_properties:',properties)
         try:
             self.mp.people_set(user_id, properties)
             print(f"Added new user: {event_name}")
@@ -221,22 +224,15 @@ def track_user_input(event_data_dict, request: Request) -> TrackingResponse:
         event_data = DictToClass(event_data_dict)
         logger.info(f"Tracker created for user_id: {event_data.user_id}")
 
-        # Prepare event properties
-        event_properties = {
-            "input": event_data.input,
-            "output": event_data.output,
-            "input_lang": event_data.input_lang,
-            "output_lang": event_data.output_lang,
-            "response_time": event_data.response_time,
-            "version": event_data.version,
-            "source_app": event_data.source_app,
-            "ip_address": event_data.ip_address,
-            "$city": event_data.city,
-            "$Country": event_data.country,
-            "model": event_data.model,
-            "is_stream": event_data.is_stream,
-        }
-
+           # Prepare event properties conditionally based on available attributes
+        event_properties = {}
+        for attr in ["input", "output", "input_lang", "output_lang", "response_time", 
+                     "version", "source_app", "ip_address", "city", "country", 
+                     "model", "is_stream"]:
+            if hasattr(event_data, attr) and getattr(event_data, attr) is not None:
+                key = f"${attr}" if attr in ["city", "country"] else attr  # Special formatting for Mixpanel geo attributes
+                event_properties[key] = getattr(event_data, attr)
+        
         # Track the event
         event_result = tracker.track_event(
             user_id=event_data.user_id,
@@ -319,7 +315,7 @@ def track_signup_input(signup_data_dict, request: Request) -> TrackingResponse:
     Track a signup event with device information
     
     Args:
-        signup_data (SignupRequest): Signup data model
+        signup_data_dict (dict): Signup data dictionary
         request (Request): FastAPI request object
     
     Returns:
@@ -331,38 +327,39 @@ def track_signup_input(signup_data_dict, request: Request) -> TrackingResponse:
     try:
         # Initialize the tracker
         tracker = create_mixpanel_tracker(MIXPANEL_TOKEN)
-        print(type(signup_data_dict))
-        signup_data = DictToClass(signup_data_dict)
-        # Prepare signup properties
+        
+        # Prepare signup properties using the dictionary directly
         signup_properties = {
-            "gender": signup_data.gender,
-            "age": signup_data.birth_date,
-            "profession": signup_data.profession,
-            "response_time": signup_data.response_time,
-            "version": signup_data.version,
-            "source_app": signup_data.source_app,
-            "ip_address": signup_data.ip_address,
-            "$city": signup_data.city,
-            "$Country": signup_data.country,
-        }
+                "gender": signup_data_dict.get("gender"),
+                "age": signup_data_dict.get("birth_date"),
+                "profession": signup_data_dict.get("profession"),
+                "response_time": signup_data_dict.get("response_time"),
+                "version": signup_data_dict.get("version"),
+                "source_app": signup_data_dict.get("source_app"),
+                "ip_address": signup_data_dict.get("ip_address"),
+                "city": signup_data_dict.get("city"),
+                "country": signup_data_dict.get("country"),
+                "name": signup_data_dict.get("name"),  # Prefixed name with $
+                "email": signup_data_dict.get("email"),  # Prefixed email with $
+            }
 
         # Track the signup
         signup_result = tracker.track_user_signup(
-            user_id=str(signup_data.id),
-            event_name=signup_data.type,
+            user_id=str(signup_data_dict.get("id")),
+            event_name=signup_data_dict.get("type"),
             event_data_properties=signup_properties,
             user_agent_string=request.headers.get('User-Agent')
         )
 
         # Return successful response
         return TrackingResponse(
-            status_code = 200,
+            status_code=200,
             success=True,
             message="Signup event tracked successfully",
             timestamp=datetime.utcnow(),
             details={
-                "user_id": str(signup_data.id),
-                "source_app": signup_data.source_app
+                "user_id": str(signup_data_dict.get("id")),
+                "source_app": signup_data_dict.get("source_app")
             }
         )
 

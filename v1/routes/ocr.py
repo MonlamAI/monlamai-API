@@ -13,6 +13,8 @@ from v1.utils.get_id_token import get_id_token
 from PIL import ImageOps
 import asyncio
 import uuid
+from v1.utils.mixPanel_track import track_signup_input,track_user_input
+
 router = APIRouter()
 
 class Input(BaseModel):
@@ -71,6 +73,21 @@ async def ocr(request: Input, client_request: Request):
         "city": city,
         "country": country,
          }
+        mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'OCR',
+                    "input": request.input,
+                    "output": text,
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": 0,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                }
+        if user_id is None:
+            mixPanel_data['user_id'] = "random_user"
+        tracked_event = track_user_input(mixPanel_data, client_request)
         asyncio.create_task(create_ocr(ocr_data))
         
         return {

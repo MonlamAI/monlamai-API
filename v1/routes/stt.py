@@ -14,6 +14,8 @@ import ffmpeg
 import os 
 import tempfile
 from typing import Tuple
+from v1.utils.mixPanel_track import track_signup_input,track_user_input
+from v1.libs.upload_file_to_s3 import upload_file_to_s3
 
 
 router = APIRouter()
@@ -57,13 +59,14 @@ async def speech_to_text_func(
         audio = await file.read()
         content_type = file.content_type
         flac_audio, flac_filename = await convert_to_flac(audio, file.filename)
+        file_url = await upload_file_to_s3(flac_audio, content_type, 'stt/'+file.filename)
         client_ip, source_app, city, country = get_client_metadata(client_request)
         text_data, response_time = await transcribe_audio(flac_audio, lang )
         generated_id = str(uuid.uuid4())
         
         stt_data = {
             "id": generated_id,
-            "input": file.filename, 
+            "input": file_url, 
             "output": text_data,
             "response_time": response_time,
             "ip_address": client_ip,
@@ -75,6 +78,21 @@ async def speech_to_text_func(
         }
         
         # Asynchronously create the speech-to-text record
+        mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'SpeechToText',
+                    "input": file_url,
+                    "output": text_data,
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": response_time,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                }
+        if user_id is None:
+            mixPanel_data['user_id'] = "random_user"
+        tracked_event = track_user_input(mixPanel_data, client_request)
         asyncio.create_task(create_speech_to_text(stt_data))
         
         return {
@@ -115,6 +133,23 @@ async def speech_to_text_func(request:Input, client_request: Request):
         "city": city,
         "country": country,
         }
+        
+        mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'SpeechToText',
+                    "input": request.input,
+                    "output": text_data,
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": response_time,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                }
+        if user_id is None:
+            mixPanel_data['user_id'] = "random_user"
+        tracked_event = track_user_input(mixPanel_data, client_request)
+        
         asyncio.create_task(create_speech_to_text(stt_data))
         return {
             "success": True,

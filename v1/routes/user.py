@@ -33,24 +33,44 @@ class UserCreateSchema(BaseModel):
     
 
 @router.post("/create")
-async def create_user_route(user_data: UserCreateSchema,client_request:Request):
-    user=user_data.dict()
-    client_ip, source_app, city,country = get_client_metadata(client_request)
-          
-    user_id = await create_user(user)
-    user['id']=user_id
-    user['type']="registration"
-    user['source_app']=source_app
-    user['version']="0.0.1"
-    user['response_time']=0
-    user['ip_address']=client_ip
-    user['city']=city
-    user['country']=country
+async def create_user_route(user_data: UserCreateSchema, client_request: Request):
+    # Extract user data from the input schema
+    user = user_data.dict()
     
-    new_user=track_signup_input(signup_data_dict=user,request=client_request)
-    if user_id is None:
+    # Get client metadata
+    client_ip, source_app, city, country = get_client_metadata(client_request)
+    
+    # Attempt to create a new user in the database
+    try:
+        userdb = await create_user(user)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+    # Check if user creation was successful
+    if not userdb or not userdb.id:
         raise HTTPException(status_code=400, detail="User creation failed")
-    return {"message": "User created successfully", "user_id": user_id}
+    
+    # Populate the user data dictionary with additional metadata
+    user.update({
+        "id": userdb.id,
+        "type": "registration",
+        "source_app": source_app,
+        "version": "0.0.1",
+        "response_time": 0,
+        "ip_address": client_ip,
+        "city": city,
+        "country": country,
+        "name": userdb.username,
+        "email": userdb.email
+    })
+    
+    # Track the signup using the populated user data
+    
+    track_signup_input(signup_data_dict=user, request=client_request)
+    
+    # Return a success response with the new user ID
+    return {"message": "User created successfully", "user_id": userdb.id}
+
 
 
 @router.post("/{email}/update")
