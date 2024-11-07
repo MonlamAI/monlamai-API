@@ -1,12 +1,13 @@
 
 
-from fastapi import  HTTPException, APIRouter
+from fastapi import  HTTPException, APIRouter,Request
 from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional
 from v1.models import Gender
+from v1.utils.utils import get_client_metadata
 from v1.model.user import update_user,delete_user_by_email,create_user,get_user_by_email
-
+from v1.utils.mixPanel_track import track_signup_input,track_user_input
 router = APIRouter()
 
 
@@ -22,11 +23,31 @@ class UserCreateSchema(BaseModel):
     email: EmailStr
     name: str
     picture: Optional[str] = None
-
+    role: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    gender: Optional[str] = None
+    interest: Optional[str] = None
+    profession: Optional[str] = None
+    birth_date: Optional[date] = None
+    
 
 @router.post("/create")
-async def create_user_route(user_data: UserCreateSchema):
-    user_id = await create_user(user_data.dict())
+async def create_user_route(user_data: UserCreateSchema,client_request:Request):
+    user=user_data.dict()
+    client_ip, source_app, city,country = get_client_metadata(client_request)
+          
+    user_id = await create_user(user)
+    user['id']=user_id
+    user['type']="registration"
+    user['source_app']=source_app
+    user['version']="0.0.1"
+    user['response_time']=0
+    user['ip_address']=client_ip
+    user['city']=city
+    user['country']=country
+    
+    new_user=track_signup_input(signup_data_dict=user,request=client_request)
     if user_id is None:
         raise HTTPException(status_code=400, detail="User creation failed")
     return {"message": "User created successfully", "user_id": user_id}
@@ -35,7 +56,6 @@ async def create_user_route(user_data: UserCreateSchema):
 @router.post("/{email}/update")
 async def update_user_route(email: str, user_data: UserUpdateSchema):
     updated_user = await update_user(email, user_data.dict(exclude_unset=True))
-    
     if updated_user is None:
         raise HTTPException(status_code=404, detail="User not found or update failed")
     return {"message": "User updated successfully", "user": updated_user}

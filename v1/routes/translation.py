@@ -17,6 +17,7 @@ from slowapi.util import get_remote_address
 from mixpanel import Mixpanel
 import os
 from dotenv import load_dotenv
+from v1.utils.mixPanel_track import track_user_input, track_signup_input
 
 load_dotenv()
 
@@ -41,7 +42,22 @@ async def check_translation(client_request: Request):
        try:
             translated = await translator_mt(text, direction)
             client_ip, source_app, city,country = get_client_metadata(client_request)
-           
+            mixPanel_data = {
+                "user_id": "user_id", 
+                "type": 'Translation',
+                "input": text,
+                "output": translated['translation'],
+                "input_lang": 'bo',
+                "output_lang":'en', 
+                "ip_address": client_ip,
+                "city": city,
+                "country": country,
+                "response_time": translated['responseTime'],
+                "version": "1.0.0",
+                "source_app": source_app,
+            }
+            tracked_event = track_user_input(mixPanel_data, client_request)
+            print("tracked_event",tracked_event)
             return {
             "success": True,
             "translation": translated['translation'],
@@ -52,19 +68,22 @@ async def check_translation(client_request: Request):
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/")
-
 async def translate(request:Input, client_request: Request):
     token=get_id_token(client_request)
     user_id =await get_user_id(token)
     lang=detect_language(request.input)
+    print(lang)
     try:
         chunked_text= chunk_text(request.input,lang,50)
         translated_text=""
+        print('chunked_text',chunked_text)
         for text in chunked_text:
            translated = await translator_llm(text, request.target)
            translated_text+=translated['translation']
         # save translations
         generated_id=  str(uuid.uuid4())
+        print('generated_id',generated_id)
+        
         input_lang = detect_language(request.input) or ""
         client_ip, source_app, city,country = get_client_metadata(client_request)
         translation_data = {
@@ -81,9 +100,27 @@ async def translate(request:Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
-       
+        mixPanel_data = {
+                "user_id": user_id, 
+                "type": 'Translation',
+                "input": request.input,
+                "output": translated_text,
+                "input_lang": input_lang,
+                "output_lang": request.target, 
+                "ip_address": client_ip,
+                "city": city,
+                "country": country,
+                "response_time": translated['responseTime'],
+                "version": "1.0.0",
+                "source_app": source_app,
+                "model":"melong",
+                "is_stream":False
+                
+            }
+        tracked_event = track_user_input(mixPanel_data, client_request)
         asyncio.create_task(create_translation(translation_data))
         
+       
         return {
             "success": True,
             "id":generated_id,
@@ -108,9 +145,9 @@ async def stream_translate(request: Input, client_request: Request):
         async def on_complete(generated_text, response_time):
             # Schedule the database save in the background
             if generated_text:
-                 input_lang = detect_language(request.input)
-                 client_ip, source_app, city, country = get_client_metadata(client_request)
-                 translation_data = {
+                input_lang = detect_language(request.input)
+                client_ip, source_app, city, country = get_client_metadata(client_request)
+                translation_data = {
                             "id": inference_id,
                             "input": request.input, 
                             "output": generated_text,  
@@ -124,7 +161,24 @@ async def stream_translate(request: Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
-                 asyncio.create_task(create_translation(translation_data))
+                mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'Translation',
+                    "input": request.input,
+                    "output": generated_text,
+                    "input_lang": input_lang,
+                    "output_lang": request.target, 
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": response_time,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                    "model":"melong",
+                    "is_stream":True
+                }
+                tracked_event = track_user_input(mixPanel_data, client_request)
+                asyncio.create_task(create_translation(translation_data))
                  
         # Await the streaming translation with the on_complete callback
         translated = await translator_stream_llm(
@@ -171,7 +225,25 @@ async def translate(request:Input, client_request: Request):
                             "city": city,
                             "country": country,
                             }
-       
+        mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'Translation',
+                    "input": request.input,
+                    "output": translated_text,
+                    "input_lang": input_lang,
+                    "output_lang": request.target, 
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": translated['responseTime'],
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                    "model":"matlad",
+                    "is_stream":False
+                    
+                    
+                }
+        tracked_event = track_user_input(mixPanel_data, client_request)
         asyncio.create_task(create_translation(translation_data))
         
         return {
@@ -198,23 +270,41 @@ async def stream_translate(request: Input, client_request: Request):
         async def on_complete(generated_text, response_time):
             # Schedule the database save in the background
             if generated_text:
-                 input_lang = detect_language(request.input)
-                 client_ip, source_app, city, country = get_client_metadata(client_request)
-                 translation_data = {
-                            "id": inference_id,
-                            "input": request.input, 
-                            "output": generated_text,  
-                            "input_lang": input_lang, 
-                            "output_lang": request.target, 
-                            "response_time": response_time,  
-                            "ip_address": client_ip,
-                            "version": "1.0.0",                        
-                            "source_app": source_app,
-                            "user_id": user_id,  
-                            "city": city,
-                            "country": country,
-                            }
-                 asyncio.create_task(create_translation(translation_data))
+                input_lang = detect_language(request.input)
+                client_ip, source_app, city, country = get_client_metadata(client_request)
+                translation_data = {
+                        "id": inference_id,
+                        "input": request.input, 
+                        "output": generated_text,  
+                        "input_lang": input_lang, 
+                        "output_lang": request.target, 
+                        "response_time": response_time,  
+                        "ip_address": client_ip,
+                        "version": "1.0.0",                        
+                        "source_app": source_app,
+                        "user_id": user_id,  
+                        "city": city,
+                        "country": country,
+                        }
+                mixPanel_data = {
+                    "user_id": user_id, 
+                    "type": 'Translation',
+                    "input": request.input,
+                    "output": generated_text,
+                    "input_lang": input_lang,
+                    "output_lang": request.target, 
+                    "ip_address": client_ip,
+                    "city": city,
+                    "country": country,
+                    "response_time": response_time,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                    "model":"matlad",
+                    "is_stream":True
+                    
+                }
+                tracked_event = track_user_input(mixPanel_data, client_request)
+                asyncio.create_task(create_translation(translation_data))
                  
         # Await the streaming translation with the on_complete callback
         translated = await translator_stream_mt(
