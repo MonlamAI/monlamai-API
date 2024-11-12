@@ -67,8 +67,8 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
     })
     
     # Track the signup using the populated user data
-    
-    track_signup_input(signup_data_dict=user,send_event=user_res['created'], request=client_request)
+    user['type']="registration" if user_res['created'] else "login"    
+    track_signup_input(signup_data_dict=user,send_event=True, request=client_request)
     
     # Return a success response with the new user ID
     return {"message": "User created successfully", "user_id": userdb.id}

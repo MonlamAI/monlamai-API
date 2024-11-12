@@ -112,7 +112,6 @@ class EventTracker:
         # Track event in Mixpanel
         try:
             self.mp.people_set(user_id, properties)
-            print(event_name,send_event)
             if send_event:
                 self.mp.track(user_id, event_name, properties)
         except Exception as e:
