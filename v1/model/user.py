@@ -15,6 +15,7 @@ async def get_user_by_id(id: int):
 
 
 async def create_user(user_data: dict):
+    created = False
     user = await get_user_by_email(user_data['email'])
     
     if not user:
@@ -30,10 +31,10 @@ async def create_user(user_data: dict):
         for field in optional_fields:
             if field in user_data:
                 data[field] = user_data[field]
-        
+        created = True
         user = await db.user.create(data=data)
     
-    return user
+    return {'user':user,'created':created}
 
 
 async def delete_user_by_email(email: str):

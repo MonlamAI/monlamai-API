@@ -55,7 +55,7 @@ async def verify(token):
       payload=verify_and_parse_token(token)
       if payload:
         data=await create_user(payload)
-        return data.id
+        return data['user'].id
     except ExpiredSignatureError:
         return {"message": "token expired"}
     except ValueError as e:

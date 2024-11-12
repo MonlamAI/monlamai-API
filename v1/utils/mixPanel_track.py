@@ -90,7 +90,8 @@ class EventTracker:
         user_id: str, 
         event_name: str = 'Signup',
         event_data_properties: Optional[Dict] = None, 
-        user_agent_string: Optional[str] = None):
+        user_agent_string: Optional[str] = None,
+        is_newUser: bool = False):
         """
         Track an event in Mixpanel with optional device details.
         
@@ -101,7 +102,6 @@ class EventTracker:
         """
         # Prepare base properties
         properties = event_data_properties or {}
-        print('before_event_properties:',properties)
         
         # Add device details if user agent is provided
         if user_agent_string:
@@ -110,12 +110,11 @@ class EventTracker:
         
         
         # Track event in Mixpanel
-        print('event_properties:',properties)
         try:
             self.mp.people_set(user_id, properties)
-            print(f"Added new user: {event_name}")
-            self.mp.track(user_id, event_name, properties)
-            print(f"Event tracked: {event_name}")
+            if is_newUser:
+                print('isnew_user',is_newUser)
+                self.mp.track(user_id, event_name, properties)
         except Exception as e:
             print(f"Error tracking event: {e}")
 
@@ -310,7 +309,7 @@ def track_user_input(event_data_dict, request: Request) -> TrackingResponse:
         )
 
 
-def track_signup_input(signup_data_dict, request: Request) -> TrackingResponse:
+def track_signup_input(signup_data_dict,is_newUser:bool, request: Request) -> TrackingResponse:
     """
     Track a signup event with device information
     
@@ -348,7 +347,8 @@ def track_signup_input(signup_data_dict, request: Request) -> TrackingResponse:
             user_id=str(signup_data_dict.get("id")),
             event_name=signup_data_dict.get("type"),
             event_data_properties=signup_properties,
-            user_agent_string=request.headers.get('User-Agent')
+            user_agent_string=request.headers.get('User-Agent'),
+            is_newUser=is_newUser
         )
 
         # Return successful response
