@@ -68,7 +68,7 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
     
     # Track the signup using the populated user data
     
-    track_signup_input(signup_data_dict=user,is_newUser=user_res['created'], request=client_request)
+    track_signup_input(signup_data_dict=user,send_event=user_res['created'], request=client_request)
     
     # Return a success response with the new user ID
     return {"message": "User created successfully", "user_id": userdb.id}
@@ -76,8 +76,12 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
 
 
 @router.post("/{email}/update")
-async def update_user_route(email: str, user_data: UserUpdateSchema):
+async def update_user_route(email: str, user_data: UserUpdateSchema,client_request: Request):
     updated_user = await update_user(email, user_data.dict(exclude_unset=True))
+    updated=updated_user.dict()
+    updated['type']="update user"
+    track_signup_input(signup_data_dict=updated,send_event=True, request=client_request)
+    
     if updated_user is None:
         raise HTTPException(status_code=404, detail="User not found or update failed")
     return {"message": "User updated successfully", "user": updated_user}

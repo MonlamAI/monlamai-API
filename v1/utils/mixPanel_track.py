@@ -91,7 +91,7 @@ class EventTracker:
         event_name: str = 'Signup',
         event_data_properties: Optional[Dict] = None, 
         user_agent_string: Optional[str] = None,
-        is_newUser: bool = False):
+        send_event: bool = False):
         """
         Track an event in Mixpanel with optional device details.
         
@@ -112,8 +112,8 @@ class EventTracker:
         # Track event in Mixpanel
         try:
             self.mp.people_set(user_id, properties)
-            if is_newUser:
-                print('isnew_user',is_newUser)
+            print(event_name,send_event)
+            if send_event:
                 self.mp.track(user_id, event_name, properties)
         except Exception as e:
             print(f"Error tracking event: {e}")
@@ -309,7 +309,7 @@ def track_user_input(event_data_dict, request: Request) -> TrackingResponse:
         )
 
 
-def track_signup_input(signup_data_dict,is_newUser:bool, request: Request) -> TrackingResponse:
+def track_signup_input(signup_data_dict,send_event:bool, request: Request) -> TrackingResponse:
     """
     Track a signup event with device information
     
@@ -348,7 +348,7 @@ def track_signup_input(signup_data_dict,is_newUser:bool, request: Request) -> Tr
             event_name=signup_data_dict.get("type"),
             event_data_properties=signup_properties,
             user_agent_string=request.headers.get('User-Agent'),
-            is_newUser=is_newUser
+            send_event=send_event
         )
 
         # Return successful response
