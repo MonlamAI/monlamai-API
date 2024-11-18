@@ -23,6 +23,32 @@ headers = {
         "Authorization": f"Bearer {MODEL_AUTH}",
         "Access-Control-Allow-Origin": "*",
     }
+
+language_options = [
+    {"value": "English", "code": "en", "name": "english"},
+    {"value": "Tibetan", "code": "bo", "name": "tibetan"},
+    # {"value": "Sanskrit (Devanagari)", "code": "sa-dev", "name": "sanskrit-dev"},
+    # {"value": "Buddhist Chinese", "code": "zh-old", "name": "buddhist-chinese"},
+    # {"value": "Hindi", "code": "hi", "name": "hindi"},
+    {"value": "Japanese", "code": "ja", "name": "japanese"},
+    # {"value": "Korean", "code": "ko", "name": "korean"},
+    # {"value": "Pali", "code": "pi", "name": "pali"},
+    {"value": "Modern Chinese", "code": "zh-new", "name": "modern-chinese"},
+    # {"value": "Russian", "code": "ru", "name": "russian"},
+    {"value": "French", "code": "fr-new", "name": "french"},
+    {"value": "German", "code": "de", "name": "german"},
+    # {"value": "Italian", "code": "it", "name": "italian"},
+    # {"value": "Spanish", "code": "es", "name": "spanish"},
+    # {"value": "Portuguese", "code": "pt", "name": "portuguese"},
+    # {"value": "Dutch", "code": "nl", "name": "dutch"},
+]
+
+def detect_language_from_code(code):
+    for option in language_options:
+        if option["code"] == code:
+            return option["value"]
+    return "English"
+
 def clean_text(original_text):
     # Replace the escape sequence for single quotes with just a single quote
     cleaned_text = original_text.replace("\\'", "'")
@@ -55,7 +81,7 @@ async def translator_llm(text: str, direction: str ):
     
    
 
-    language = 'Tibetan' if direction == 'bo' else 'English'
+    language =  detect_language_from_code(direction)
     try:
         start_time = time.time()  # Record start time
         
@@ -87,7 +113,9 @@ async def translator_llm(text: str, direction: str ):
 async def translator_stream_llm(text: str, direction: str,inferenceID, on_complete=None):
     # Retrieve environment variables
     start_time = time.time()
+    print('translating')
     url = f"{LLM_MODEL_URL}/translation_generate_stream"
+    language = detect_language_from_code(direction)
      # Retrieve the Origin and Referer headers
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
@@ -105,8 +133,6 @@ async def translator_stream_llm(text: str, direction: str,inferenceID, on_comple
     async def event_stream():
         
         try:
-            language = 'Tibetan' if direction == 'bo' else 'English'
-
             
             body = {
                 "inputs": text,
