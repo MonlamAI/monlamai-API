@@ -234,6 +234,7 @@ async def handle_audio_file(base64_audio):
     timestamp = int(time.time())
     file_name = f"TTS/output/{timestamp}_{uuid.uuid4()}-tts-audio.webm"
     file_url = await upload_file_to_s3(audio_file, 'audio/webm', file_name)
+    print('fileurl',file_url)
     return file_url
 
 async def process_text_chunks(text_chunks, volume_increase_db=20):

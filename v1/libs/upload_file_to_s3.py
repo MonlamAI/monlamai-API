@@ -22,7 +22,7 @@ async def upload_file_to_s3(file: Any, content_type: str, filename: str) -> str:
     async with session.client('s3') as s3_client:
         try:
             # Upload file to S3
-            s3_client.upload_fileobj(
+            await s3_client.upload_fileobj(
                 file,
                 AWS_S3_BUCKET_NAME,
                 filename,
