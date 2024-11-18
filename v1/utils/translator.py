@@ -41,6 +41,9 @@ language_options = [
     # {"value": "Spanish", "code": "es", "name": "spanish"},
     # {"value": "Portuguese", "code": "pt", "name": "portuguese"},
     # {"value": "Dutch", "code": "nl", "name": "dutch"},
+    {"value": "Czech", "code": "cs", "name": "czech"},
+    {"value": "Vietnamese", "code": "vi", "name": "vietnamese"},
+    {"value": "Mongolian", "code": "mn", "name": "mongolian"},
 ]
 
 def detect_language_from_code(code):
