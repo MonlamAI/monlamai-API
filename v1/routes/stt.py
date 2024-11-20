@@ -59,7 +59,7 @@ async def speech_to_text_func(
         audio = await file.read()
         content_type = file.content_type
         flac_audio, flac_filename = await convert_to_flac(audio, file.filename)
-        file_url = await upload_file_to_s3(flac_audio, content_type, 'stt/'+file.filename)
+        file_url = await upload_file_to_s3(file.file, content_type, 'stt/'+file.filename)
         client_ip, source_app, city, country = get_client_metadata(client_request)
         text_data, response_time = await transcribe_audio(flac_audio, lang )
         generated_id = str(uuid.uuid4())
