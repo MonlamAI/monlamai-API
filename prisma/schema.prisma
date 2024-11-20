@@ -71,7 +71,7 @@ model Translation {
 }
 
 model SpeechToTexts {
-    id           Int      @id @default(autoincrement())
+    id           String   @id @default(uuid())
     input        String
     output       String
     responseTime String?
@@ -91,7 +91,7 @@ model SpeechToTexts {
 }
 
 model TextToSpeech {
-    id           Int      @id @default(autoincrement())
+    id           String   @id @default(uuid())
     input        String
     output       String
     responseTime String?
@@ -109,7 +109,7 @@ model TextToSpeech {
 }
 
 model OCR {
-    id           Int      @id @default(autoincrement())
+    id           String   @id @default(uuid())
     input        String
     output       String
     responseTime String?
@@ -141,7 +141,7 @@ model Thread {
 }
 
 model Chat {
-  id          Int       @id @default(autoincrement())
+  id           String   @id @default(uuid())
   input       String
   output      String
   thread      Thread    @relation("ThreadChats", fields: [threadId], references: [id])

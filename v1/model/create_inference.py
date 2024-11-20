@@ -6,7 +6,6 @@ from v1.Config.Connection import db,prisma_connection
 async def create_translation( translation_data: dict) -> Translation:
    
     data = {
-        'id':translation_data['id'],
         'input': translation_data['input'],
         'output': translation_data['output'],
         'inputLang': translation_data['input_lang'],
@@ -25,9 +24,7 @@ async def create_translation( translation_data: dict) -> Translation:
     return translation
 
 async def create_speech_to_text( speech_data: dict) -> SpeechToTexts:
-    speech_to_text = await db.speechtotexts.create(
-        data={
-            'id':speech_data['id'],
+    data={
             'input': speech_data['input'],
             'output': speech_data['output'],
             'responseTime': str(round(speech_data['response_time'])),
@@ -38,13 +35,15 @@ async def create_speech_to_text( speech_data: dict) -> SpeechToTexts:
             'city': speech_data.get('city'),
             'country': speech_data.get('country'),
         }
+    if 'id' in speech_data:
+        data['id'] = speech_data['id']
+    speech_to_text = await db.speechtotexts.create(
+        data=data
     )
     return speech_to_text
 
 async def create_text_to_speech( tts_data: dict) -> TextToSpeech:
-    text_to_speech = await db.texttospeech.create(
-        data={
-            'id':tts_data['id'],
+    data={
             'input': tts_data['input'],
             'output': tts_data['output'],
             'responseTime': str(round(tts_data['response_time'])),
@@ -55,13 +54,15 @@ async def create_text_to_speech( tts_data: dict) -> TextToSpeech:
             'city': tts_data.get('city'),
             'country': tts_data.get('country'),
         }
+    if 'id' in tts_data:
+        data['id'] = tts_data['id']
+    text_to_speech = await db.texttospeech.create(
+        data=data
     )
     return text_to_speech
 
 async def create_ocr(ocr_data: dict) -> OCR:
-    return await db.ocr.create(
-        data={
-            'id':ocr_data['id'],
+    data={
             'input': ocr_data['input'],
             'output': ocr_data['output'],
             'responseTime': str(round(ocr_data['response_time'])),
@@ -72,4 +73,8 @@ async def create_ocr(ocr_data: dict) -> OCR:
             'city': ocr_data.get('city'),
             'country': ocr_data.get('country'),
         }
+    if 'id' in ocr_data:
+        data['id'] = ocr_data['id']
+    return await db.ocr.create(
+        data=data
     )

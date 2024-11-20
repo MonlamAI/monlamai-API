@@ -43,7 +43,7 @@ class User(BaseModel):
     
 
 class Translation(BaseModel):
-    id: int
+    id: str
     input: str
     output: str
     inputLang: str
@@ -62,7 +62,7 @@ class Translation(BaseModel):
     likedByUsers: List[User] = []
 
 class SpeechToTexts(BaseModel):
-    id: int
+    id: str
     input: str
     output: str
     responseTime: str
@@ -79,7 +79,7 @@ class SpeechToTexts(BaseModel):
     likedByUsers: List[User] = []
 
 class TextToSpeech(BaseModel):
-    id: int
+    id: str
     input: str
     output: str
     responseTime: str
@@ -95,7 +95,7 @@ class TextToSpeech(BaseModel):
     likedByUsers: List[User] = []
 
 class OCR(BaseModel):
-    id: int
+    id: str
     input: str
     output: str
     responseTime: str
@@ -124,7 +124,7 @@ class Thread(BaseModel):
     chats: List['Chat'] = []
 
 class Chat(BaseModel):
-    id: int
+    id: str
     content: str
     threadId: int
     thread: Thread
