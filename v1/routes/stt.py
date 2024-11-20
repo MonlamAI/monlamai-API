@@ -93,8 +93,7 @@ async def speech_to_text_func(
         if user_id is None:
             mixPanel_data['user_id'] = "random_user"
         tracked_event = track_user_input(mixPanel_data, client_request)
-        # asyncio.create_task(create_speech_to_text(stt_data))
-        await create_speech_to_text(stt_data)
+        asyncio.create_task(create_speech_to_text(stt_data))
         
         return {
             "success": True,
