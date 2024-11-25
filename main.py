@@ -99,8 +99,10 @@ def read_root():
 def get_token():
     
     API_TOKEN = os.getenv("MODEL_AUTH") 
-    API_URL = os.getenv("MT_MODEL_URL")  
-    return {"token":API_TOKEN,"url":API_URL}
+    API_URL = os.getenv("LLM_MODEL_URL")
+    API_URL2 = os.getenv("MT_MODEL_URL")  
+      
+    return {"token":API_TOKEN,"url":API_URL,'llm_url':API_URL2}
 
 # Include the v1 router with the prefix /api/v1
 app.include_router(translationRoute, prefix="/api/v1/translation",dependencies=[Depends(verify_token)],tags=["translation"])
