@@ -99,7 +99,7 @@ def read_root():
 def get_token():
     
     API_TOKEN = os.getenv("MODEL_AUTH") 
-    API_URL = os.getenv("LLM_MODEL_URL")  
+    API_URL = os.getenv("MT_MODEL_URL")  
     return {"token":API_TOKEN,"url":API_URL}
 
 # Include the v1 router with the prefix /api/v1
