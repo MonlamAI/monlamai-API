@@ -1,14 +1,12 @@
 from fastapi import APIRouter, HTTPException,Request,Query,BackgroundTasks
 from v1.utils.translator import translator_llm,translator_mt,translator_stream_llm,translator_stream_mt
-from typing import Optional
 from pydantic import BaseModel
 from v1.utils.language_detect import detect_language
 from v1.model.create_inference import create_translation
 from v1.utils.utils import get_client_metadata
-from v1.utils.utils import get_user_id
 import asyncio
 from v1.model.edit_inference import edit_inference
-from v1.utils.get_id_token import get_id_token
+from v1.utils.get_userId_from_cookie import get_user_id_from_cookie
 import queue
 import uuid
 from v1.libs.chunk_text import chunk_tibetan_text
@@ -17,7 +15,7 @@ from slowapi.util import get_remote_address
 from mixpanel import Mixpanel
 import os
 from dotenv import load_dotenv
-from v1.utils.mixPanel_track import track_user_input, track_signup_input
+from v1.utils.mixPanel_track import track_user_input
 
 load_dotenv()
 
@@ -69,10 +67,8 @@ async def check_translation(client_request: Request):
 
 @router.post("/")
 async def translate(request:Input, client_request: Request):
-    token=get_id_token(client_request)
-    user_id =await get_user_id(token)
+    user_id=await get_user_id_from_cookie(client_request)
     lang=detect_language(request.input)
-    print(lang)
     try:
         chunked_text= chunk_text(request.input,lang,50)
         translated_text=""
@@ -134,8 +130,7 @@ async def translate(request:Input, client_request: Request):
 
 @router.post("/stream")
 async def stream_translate(request: Input, client_request: Request):
-    token = get_id_token(client_request)
-    user_id = await get_user_id(token)
+    user_id =await get_user_id_from_cookie(client_request)
     inference_id =  str(uuid.uuid4())
     if not request.input or not request.target:
         raise HTTPException(status_code=400, detail="Missing input or target field.")
@@ -198,8 +193,8 @@ async def stream_translate(request: Input, client_request: Request):
 @router.post("/mt")
 
 async def translate(request:Input, client_request: Request):
-    token=get_id_token(client_request)
-    user_id =await get_user_id(token)
+    user_id=await get_user_id_from_cookie(client_request)
+
     lang=detect_language(request.input)
     try:
         chunked_text= chunk_text(request.input,lang,50)
@@ -259,8 +254,7 @@ async def translate(request:Input, client_request: Request):
 
 @router.post("/mt/stream")
 async def stream_translate(request: Input, client_request: Request):
-    token = get_id_token(client_request)
-    user_id = await get_user_id(token)
+    user_id=await get_user_id_from_cookie(client_request)
     inference_id =  str(uuid.uuid4())
     if not request.input or not request.target:
         raise HTTPException(status_code=400, detail="Missing input or target field.")

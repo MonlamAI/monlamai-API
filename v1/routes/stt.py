@@ -7,7 +7,6 @@ from typing import Optional
 from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_speech_to_text
 from v1.model.edit_inference import edit_inference
-from v1.utils.get_id_token import get_id_token
 import asyncio
 import uuid
 import ffmpeg
@@ -16,6 +15,7 @@ import tempfile
 from typing import Tuple
 from v1.utils.mixPanel_track import track_signup_input,track_user_input
 from v1.libs.upload_file_to_s3 import upload_file_to_s3
+from v1.utils.get_userId_from_cookie import get_user_id_from_cookie
 
 
 router = APIRouter()
@@ -51,8 +51,8 @@ async def speech_to_text_func(
     file: UploadFile = File(...),  # Upload file directly
     lang: str = Form(...)           # Language as a form field
 ):
-    token = get_id_token(client_request)
-    user_id = await get_user_id(token)
+    user_id=await get_user_id_from_cookie(client_request)
+
     
     try:
         # Read the audio content from the uploaded file
@@ -112,8 +112,8 @@ async def speech_to_text_func(
 
 @router.post("/")
 async def speech_to_text_func(request:Input, client_request: Request):
-       token = get_id_token(client_request)
-       user_id =await get_user_id(token)
+       user_id=await get_user_id_from_cookie(client_request)
+
        try:
         audio_url=request.input
         lang=request.lang

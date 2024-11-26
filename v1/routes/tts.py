@@ -10,14 +10,13 @@ from v1.utils.utils import get_user_id
 from v1.libs.chunk_text import chunk_tibetan_text
 from v1.model.edit_inference import edit_inference
 from pydub import AudioSegment
-from v1.utils.get_id_token import get_id_token
+from v1.utils.get_userId_from_cookie import get_user_id_from_cookie
 import base64
 import io
 import asyncio
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse
 import json
-from io import BytesIO
-from v1.utils.mixPanel_track import track_signup_input,track_user_input
+from v1.utils.mixPanel_track import track_user_input
 
 router = APIRouter()
 class Input(BaseModel):
@@ -44,8 +43,8 @@ async def check_text_to_speech(input:str):
 
 @router.post("/")
 async def text_to_speech(request: Input, client_request: Request):
-    token=get_id_token(client_request)
-    user_id =await get_user_id(token)
+    user_id=await get_user_id_from_cookie(client_request)
+
 
     try:
         chunked_text= chunk_tibetan_text(request.input)
@@ -100,8 +99,8 @@ async def text_to_speech(request: Input, client_request: Request):
 @router.post("/stream")
 async def stream_endpoint(request: Input, client_request: Request):
     client_ip, source_app,city,country = get_client_metadata(client_request)
-    token=get_id_token(client_request)
-    user_id =await get_user_id(token)
+    user_id=await get_user_id_from_cookie(client_request)
+
     generated_id =  str(uuid.uuid4())
     chunked_text= chunk_tibetan_text(request.input,max_chunk_size=100)
         
