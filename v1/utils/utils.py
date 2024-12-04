@@ -1,4 +1,3 @@
-from v1.auth.token_verify import verify
 import requests
 import os
 from dotenv import load_dotenv
@@ -23,9 +22,6 @@ def get_client_metadata(client_request):
     city, country = get_geolocation(get_first_ip(client_ip))
     return client_ip, source_app,city, country
 
-
-import requests
-
 def get_geolocation(ip_address):
     api_key = os.getenv('GEOAPIFY_API_KEY')
     url = f"https://api.geoapify.com/v1/ipinfo?ip={ip_address}&apiKey={api_key}"
@@ -44,11 +40,3 @@ def get_geolocation(ip_address):
     except requests.exceptions.RequestException as e:
         return "Unknown", "Unknown"
 
-async def get_user_id(token: str):
-    if token:
-        user = await verify(token)
-        if hasattr(user, 'id'):  # Check if user has an id attribute
-            return user.id  # Return the id if it exists
-        elif isinstance(user, str):  # If user is a string, return it
-            return user
-    return None

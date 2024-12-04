@@ -6,7 +6,6 @@ from v1.model.create_inference import create_text_to_speech
 import uuid
 import time
 from v1.utils.utils import get_client_metadata
-from v1.utils.utils import get_user_id
 from v1.libs.chunk_text import chunk_tibetan_text
 from v1.model.edit_inference import edit_inference
 from pydub import AudioSegment

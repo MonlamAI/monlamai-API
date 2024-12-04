@@ -114,10 +114,6 @@ app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verif
 app.include_router(chatRoute, prefix="/api/v1/chat", dependencies=[Depends(verify_token)],tags=["chat"])
 app.include_router(waitRoute, prefix="/api/v1/waitlist", dependencies=[Depends(verify_token)],tags=["waitlist"])
 
-
-
-
-
 def get_port():
     """Retrieve the PORT from environment variables, defaulting to 8000 if not set."""
     port = os.getenv("PORT", 8000)  # Default to 8000 if PORT is not set

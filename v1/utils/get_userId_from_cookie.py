@@ -1,5 +1,4 @@
 from fastapi import Request, HTTPException
-from v1.utils.utils import get_user_id
 from v1.model.user import get_user_by_email
 
 async def get_user_id_from_cookie(request: Request) -> str:
