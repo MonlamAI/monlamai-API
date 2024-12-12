@@ -15,7 +15,7 @@ from typing import Tuple
 from v1.utils.mixPanel_track import track_signup_input,track_user_input
 from v1.libs.upload_file_to_s3 import upload_file_to_s3
 from v1.utils.get_userId_from_cookie import get_user_id_from_cookie
-
+from datetime import datetime
 
 router = APIRouter()
 
@@ -58,7 +58,17 @@ async def speech_to_text_func(
         audio = await file.read()
         content_type = file.content_type
         flac_audio, flac_filename = await convert_to_flac(audio, file.filename)
-        file_url = await upload_file_to_s3(file.file, content_type, 'stt/'+flac_filename)
+        file_url=''
+        # Upload FLAC file to S3
+        flac_file = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            flac_file.write(flac_audio)
+            flac_file.seek(0)  # Reset the file pointer for reading
+
+            file_url = await upload_file_to_s3(flac_file, 'audio/flac', 'stt/'+flac_filename)
+        finally:
+            flac_file.close()
+            os.unlink(flac_file.name)  # Cleanup the temporary FLAC file
         client_ip, source_app, city, country = get_client_metadata(client_request)
         text_data, response_time = await transcribe_audio(flac_audio, lang )
         generated_id = str(uuid.uuid4())
@@ -97,6 +107,7 @@ async def speech_to_text_func(
         return {
             "success": True,
             "id": generated_id,
+            "file":file_url,
             "output": text_data,
             "responseTime": response_time,
         }
@@ -221,7 +232,8 @@ async def convert_to_flac(audio_data: bytes, input_filename: str) -> Tuple[bytes
         with open(output_temp.name, 'rb') as flac_file:
             flac_data = flac_file.read()
         
-        new_filename = os.path.splitext(input_filename)[0] + '.flac'
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  
+        new_filename = f"{os.path.splitext(input_filename)[0]}_{timestamp}.flac"
         return flac_data, new_filename
             
     except ffmpeg.Error as e:
