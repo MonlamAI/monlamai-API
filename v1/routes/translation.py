@@ -256,7 +256,8 @@ async def stream_translate(request: TranslationInput, client_request: Request):
                     model="melong",
                     is_stream=True
                 )
-                
+                client_ip, source_app, city,country = get_client_metadata(client_request)
+
                 asyncio.create_task(create_translation({
                     "id": inference_id,
                     "input": request.input, 
@@ -264,7 +265,12 @@ async def stream_translate(request: TranslationInput, client_request: Request):
                     "input_lang": input_lang, 
                     "output_lang": request.target, 
                     "response_time": response_time,  
-                    "user_id": user_id
+                    "user_id": user_id,
+                    "ip_address": client_ip,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                    "city": city,
+                    "country": country,
                 }))
         
         try:
@@ -302,7 +308,8 @@ async def stream_translate(request: TranslationInput, client_request: Request):
                         model="matlad",
                         is_stream=True
                     )
-                    
+                    client_ip, source_app, city,country = get_client_metadata(client_request)
+
                     asyncio.create_task(create_translation({
                         "id": inference_id,
                         "input": request.input, 
@@ -310,7 +317,12 @@ async def stream_translate(request: TranslationInput, client_request: Request):
                         "input_lang": input_lang, 
                         "output_lang": request.target, 
                         "response_time": response_time,  
-                        "user_id": user_id
+                        "user_id": user_id,
+                        "ip_address": client_ip,
+                        "version": "1.0.0",
+                        "source_app": source_app,
+                        "city": city,
+                        "country": country,
                     }))
             
             # Fall back to Machine Translation streaming
@@ -355,7 +367,7 @@ async def translate_mt(request: TranslationInput, client_request: Request):
             model="matlad",
             is_stream=False
         )
-        
+        client_ip, source_app, city,country = get_client_metadata(client_request)
         # Save translation in background
         asyncio.create_task(create_translation({
             "id": translation_id,
@@ -364,9 +376,14 @@ async def translate_mt(request: TranslationInput, client_request: Request):
             "input_lang": input_lang,
             "output_lang": request.target,
             "response_time": translation_result['responseTime'],
-            "user_id": user_id
+            "user_id": user_id,
+             "ip_address": client_ip,
+             "version": "1.0.0",
+             "source_app": source_app,
+             "city": city,
+            "country": country,
         }))
-        
+      
         return TranslationResponse.create(
             translation=translated_text, 
             response_time=translation_result['responseTime'], 
@@ -407,6 +424,7 @@ async def stream_translate_mt(request: TranslationInput, client_request: Request
                     model="matlad",
                     is_stream=True
                 )
+                client_ip, source_app, city,country = get_client_metadata(client_request)
                 
                 asyncio.create_task(create_translation({
                     "id": inference_id,
@@ -415,7 +433,12 @@ async def stream_translate_mt(request: TranslationInput, client_request: Request
                     "input_lang": input_lang, 
                     "output_lang": request.target, 
                     "response_time": response_time,  
-                    "user_id": user_id
+                    "user_id": user_id,
+                    "ip_address": client_ip,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                    "city": city,
+                    "country": country,
                 }))
         
         # Await the streaming translation with the on_complete callback
