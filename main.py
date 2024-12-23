@@ -35,10 +35,6 @@ description = """
 """
 limiter = Limiter(key_func=get_remote_address, default_limits=["2000/minute"])
 
-
-
-
-
 app = FastAPI(
     title="Monlam API",
     description=description,

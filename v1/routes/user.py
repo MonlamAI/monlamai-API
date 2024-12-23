@@ -43,7 +43,6 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
     # Attempt to create a new user in the database
     try:
         user_res = await create_user(user)
-        print(user_res)
         userdb = user_res['user']
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal Server Error")

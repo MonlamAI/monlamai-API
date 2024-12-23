@@ -370,7 +370,7 @@ async def translate_mt(request: TranslationInput, client_request: Request):
         client_ip, source_app, city,country = get_client_metadata(client_request)
         # Save translation in background
         asyncio.create_task(create_translation({
-            "id": translation_id,
+            "id": translation_id+'-mitra',
             "input": request.input,
             "output": translated_text,
             "input_lang": input_lang,
@@ -427,7 +427,7 @@ async def stream_translate_mt(request: TranslationInput, client_request: Request
                 client_ip, source_app, city,country = get_client_metadata(client_request)
                 
                 asyncio.create_task(create_translation({
-                    "id": inference_id,
+                    "id": inference_id+'-mitra',
                     "input": request.input, 
                     "output": generated_text,  
                     "input_lang": input_lang, 
