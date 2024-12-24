@@ -1,9 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request, Query
 from v1.utils.translator import (
-    translator_llm, 
-    translator_mt, 
+    translator_llm,
+    translator_mt,
 )
-
 
 from dotenv import load_dotenv
 from slowapi import Limiter
@@ -21,41 +20,44 @@ VERSION = "1.0.0"
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
-@router.get("/")
+@router.get("/", status_code=200)
 async def check_translation(client_request: Request):
     """
     Health check endpoint for translation service
-    
+
     Args:
         client_request (Request): Client request object
-    
+
     Returns:
         dict: Translation check result
     """
     text = "hi hello how are you"
     direction = "bo"
-    
+
     try:
         # Try getting translation from MT
         try:
-            translated = await translator_mt(text, direction)
+            mt_response = await translator_mt(text, direction)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Mitra has issues: {str(e)}")
-        
+            raise HTTPException(status_code=500, detail=f"MT service has issues: {str(e)}")
+
         # Try getting translation from LLM
         try:
-            translation_result = await translator_llm(text, direction)
+            llm_response = await translator_llm(text, direction)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"LLM has issues: {str(e)}")
-        
-        # Return combined result
-        return translated['translation'] + translation_result['translation'] ,translated['responseTime']
+            raise HTTPException(status_code=500, detail=f"LLM service has issues: {str(e)}")
 
-    
+        # Combine and return results with status 200
+        return {
+            "status": "success",
+            "translation": mt_response['translation'] + llm_response['translation'],
+            "responseTime": mt_response['responseTime'] + llm_response.get('responseTime', 0),
+        }
+
     except HTTPException as http_exc:
         # Re-raise HTTP exceptions
         raise http_exc
-    
+
     except Exception as e:
         # Catch-all for any unexpected issues
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
