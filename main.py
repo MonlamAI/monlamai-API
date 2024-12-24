@@ -4,6 +4,8 @@ from fastapi import FastAPI, Depends,Request
 from fastapi.middleware.cors import CORSMiddleware
 from v1.routes.translation import router as translationRoute
 from v1.routes.tts import router as ttsRoute
+from v1.routes.check import router as checkRoute
+
 from v1.routes.stt import router as sttRoute
 from v1.routes.ocr import router as ocrRoute
 from v1.routes.s3 import router as s3Route
@@ -109,6 +111,8 @@ app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verif
 app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verify_token)],tags=["user"])
 app.include_router(chatRoute, prefix="/api/v1/chat", dependencies=[Depends(verify_token)],tags=["chat"])
 app.include_router(waitRoute, prefix="/api/v1/waitlist", dependencies=[Depends(verify_token)],tags=["waitlist"])
+app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
+
 
 def get_port():
     """Retrieve the PORT from environment variables, defaulting to 8000 if not set."""
