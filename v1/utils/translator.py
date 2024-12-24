@@ -77,6 +77,7 @@ async def translator_llm(text: str, direction: str ):
     
     if is_tibetan:
          return {"translation": text, "responseTime": 0}
+    print(word_count)
     if word_count <= 3:
             translation = get_translation_from_file(text,direction)
             if translation and translation.strip():
