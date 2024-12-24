@@ -153,32 +153,30 @@ async def check_translation(client_request: Request):
     direction = "bo"
     
     try:
-        translated = await translator_mt(text, direction)
-        client_ip, source_app, city, country = get_client_metadata(client_request)
+        # Try getting translation from MT
+        try:
+            translated = await translator_mt(text, direction)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Mitra has issues: {str(e)}")
         
-        mixPanel_data = {
-            "user_id": "user_id", 
-            "type": 'Translation',
-            "input": text,
-            "output": translated['translation'],
-            "input_lang": 'bo',
-            "output_lang": 'en', 
-            "ip_address": client_ip,
-            "city": city,
-            "country": country,
-            "response_time": translated['responseTime'],
-            "version": VERSION,
-            "source_app": source_app,
-        }
+        # Try getting translation from LLM
+        try:
+            translation_result = await translator_llm(text, direction)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"LLM has issues: {str(e)}")
         
-        track_user_input(mixPanel_data, client_request)
-        
+        # Return combined result
         return TranslationResponse.create(
-            translation=translated['translation'], 
-            response_time=translated['responseTime']
+            translation=translated['translation'] + translation_result['translation'], 
+            response_time=translated['responseTime'],
         )
     
+    except HTTPException as http_exc:
+        # Re-raise HTTP exceptions
+        raise http_exc
+    
     except Exception as e:
+        # Catch-all for any unexpected issues
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 @router.post("/")
