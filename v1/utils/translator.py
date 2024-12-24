@@ -73,14 +73,17 @@ async def translator_llm(text: str, direction: str ):
     received_data = ""
     response_time = 0
     is_tibetan:bool=detect_language(text)==direction
+    word_count = count_words(text,is_tibetan)
+    
     if is_tibetan:
          return {"translation": text, "responseTime": 0}
-   
+    if word_count <= 3:
+            translation = get_translation_from_file(text,direction)
+            if translation and translation.strip():
+                return {"translation": translation, "responseTime": response_time}
     language =  detect_language_from_code(direction)
-    print('language :',language)
     try:
         start_time = time.time()  # Record start time
-        
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url+'/translation',
@@ -112,7 +115,17 @@ async def translator_stream_llm(text: str, direction: str,inferenceID, on_comple
     print('translating')
     url = f"{LLM_MODEL_URL}/translation_generate_stream"
     language = detect_language_from_code(direction)
-  
+    is_tibetan:bool=detect_language(text)==direction
+    word_count = count_words(text,is_tibetan)
+    if word_count <= 2:
+        translation = get_translation_from_file(text, direction)
+        if translation and translation.strip():  # Only stream if a translation is found
+            async def short_event_stream():
+                yield f"data: {json.dumps({'generated_text': translation,'id':inferenceID})}\n\n"
+                if on_complete:
+                    await on_complete(translation, 0)
+            return StreamingResponse(short_event_stream(), media_type="text/event-stream")
+
     async def event_stream():
         
         try:
@@ -220,7 +233,6 @@ async def translator_stream_mt(text: str, direction: str,inferenceID, on_complet
      # Retrieve the Origin and Referer headers
     is_tibetan:bool=detect_language(text)==direction
     word_count = count_words(text,is_tibetan)
-    mp = Mixpanel("YOUR_TOKEN")
     # If the text has two or fewer words, try to get the translation from the file
     if word_count <= 2:
         translation = get_translation_from_file(text, direction)
