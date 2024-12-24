@@ -103,6 +103,7 @@ def get_token():
     return {"token":API_TOKEN,"llm_url":LLM_URL,'mt_url':MT_URL}
 
 # Include the v1 router with the prefix /api/v1
+app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
 app.include_router(translationRoute, prefix="/api/v1/translation",dependencies=[Depends(verify_token)],tags=["translation"])
 app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_token)],tags=["ocr"])
 app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_token)],tags=["speech to text"])
@@ -111,7 +112,6 @@ app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verif
 app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verify_token)],tags=["user"])
 app.include_router(chatRoute, prefix="/api/v1/chat", dependencies=[Depends(verify_token)],tags=["chat"])
 app.include_router(waitRoute, prefix="/api/v1/waitlist", dependencies=[Depends(verify_token)],tags=["waitlist"])
-app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
 
 
 def get_port():
