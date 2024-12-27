@@ -98,9 +98,11 @@ def get_token():
     
     API_TOKEN = os.getenv("MODEL_AUTH") 
     LLM_URL = os.getenv("LLM_MODEL_URL")
-    MT_URL = os.getenv("MT_MODEL_URL")  
+    MT_URL = os.getenv("MT_MODEL_URL")
+    AUTH_KEY = os.getenv("API_KEY")  
       
-    return {"token":API_TOKEN,"llm_url":LLM_URL,'mt_url':MT_URL}
+      
+    return {"token":API_TOKEN,"llm_url":LLM_URL,'mt_url':MT_URL,'auth_key':AUTH_KEY}
 
 # Include the v1 router with the prefix /api/v1
 app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
