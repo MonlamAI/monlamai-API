@@ -1,4 +1,6 @@
 from v1.Config.Connection import prisma_connection,db
+from typing import Any, Dict
+
 
 
 async def edit_inference(table: str, id: int, action: str, edit_data: str = None):
@@ -56,3 +58,23 @@ async def edit_inference(table: str, id: int, action: str, edit_data: str = None
     )
 
     return updated_data
+
+
+async def get_inference(inference_id: int):
+    # Map tables to database models or schema
+    table_map = {
+        'translation': db.translation,
+        'speechtotexts': db.speechtotexts,
+        'texttospeechs': db.texttospeech,
+        'ocr': db.ocr
+    }
+
+    for table_name, table in table_map.items():
+        record = await table.find_unique(where={'id': inference_id})
+        if record:
+            return {
+                "table": table_name,
+                "record": record
+            }
+
+    return None

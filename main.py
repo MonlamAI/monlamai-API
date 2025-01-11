@@ -1,6 +1,6 @@
 # main.py
 
-from fastapi import FastAPI, Depends,Request
+from fastapi import FastAPI, Depends,Request,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from v1.routes.translation import router as translationRoute
 from v1.routes.tts import router as ttsRoute
@@ -24,7 +24,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from v1.Config.Connection import prisma_connection
 from dotenv import load_dotenv
-
+from v1.model.edit_inference import get_inference
 load_dotenv(override=True)
 
 # Setup logging
@@ -103,6 +103,16 @@ def get_token():
       
       
     return {"token":API_TOKEN,"llm_url":LLM_URL,'mt_url':MT_URL,'auth_key':AUTH_KEY}
+
+
+@app.get("/share/{inference_id}")
+async def share_inference(inference_id: str):
+    inference = await get_inference(inference_id)
+    if inference:
+        return inference
+
+    raise HTTPException(status_code=404, detail=f"Inference with ID {inference_id} not found in any table.")
+
 
 # Include the v1 router with the prefix /api/v1
 app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
