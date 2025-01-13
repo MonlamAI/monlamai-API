@@ -35,6 +35,8 @@ model User {
     translations  Translation[]   @relation("UserTranslations")
     speechToTexts SpeechToTexts[] @relation("UserSpeechToTexts")
     textToSpeechs TextToSpeech[]  @relation("UserTextToSpeechs")
+    oldSpeechToTexts OldSpeechToTexts[] @relation("UserSpeechToTexts2")
+    oldTextToSpeechs OldTextToSpeech[]  @relation("UserTextToSpeechs2")
     ocrs          OCR[]           @relation("UserOCRs")
     threads     Thread[]  @relation("UserThreads")
     chats       Chat[]    @relation("UserChats")
@@ -107,6 +109,46 @@ model TextToSpeech {
     liked_count    Int   @default(0)
     disliked_count Int   @default(0)
 }
+
+
+model OldSpeechToTexts {
+    id           String   @id @default(uuid())
+    input        String
+    output       String
+    responseTime String?
+    ipAddress    String?
+    version      String?
+    sourceApp    String?
+    createdAt    DateTime @default(now())
+    city         String?
+    country      String?
+    editOutput   String?
+
+    user   User? @relation("UserSpeechToTexts2", fields: [userId], references: [id])
+    userId Int?
+
+    liked_count    Int @default(0)
+    disliked_count Int @default(0)
+}
+
+model OldTextToSpeech {
+    id           String   @id @default(uuid())
+    input        String
+    output       String
+    responseTime String?
+    ipAddress    String?
+    version      String?
+    sourceApp    String?
+    createdAt    DateTime @default(now())
+    city         String?
+    country      String?
+
+    user           User? @relation("UserTextToSpeechs2", fields: [userId], references: [id])
+    userId         Int?
+    liked_count    Int   @default(0)
+    disliked_count Int   @default(0)
+}
+
 
 model OCR {
     id           String   @id @default(uuid())
