@@ -1,4 +1,6 @@
-from v1.Config.Connection import db,prisma_connection
+from v1.Config.Connection import db
+from fastapi import HTTPException
+from pydantic import ValidationError
 from datetime import datetime, timezone
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -32,26 +34,44 @@ class UserCreateSchema(BaseModel):
 
 
 async def create_user(user_data: UserCreateSchema):
-    print("data" ,user_data)
-    # Check if user already exists
-    user = await get_user_by_email(user_data.email)
-    if user:
-        return {'user': user, 'created': False}
-    
-    # Prepare the data to create a new user
-    data = {
-        'username': user_data.name,
-        'email': user_data.email,
-        'picture': user_data.picture,
-    }
-    optional_fields = ['gender', 'city', 'country', 'interest', 'profession', 'birth_date']
-    for field in optional_fields:
-        if getattr(user_data, field, None):
-            data[field] = getattr(user_data, field)
-    
-    # Create the new user
-    user = await db.user.create(data=data)
-    return {'user': user, 'created': True}
+    try:
+        # Check if user already exists
+        user = await get_user_by_email(user_data.email)
+        if user:
+            return {'user': user, 'created': False}
+
+        # Prepare the data to create a new user
+        data = {
+            'username': user_data.name,
+            'email': user_data.email,
+            'picture': user_data.picture,
+        }
+
+        optional_fields = ['gender', 'city', 'country', 'interest', 'profession', 'birth_date']
+        for field in optional_fields:
+            value = getattr(user_data, field, None)
+            if value:
+                data[field] = value
+
+        # Create the new user
+        user = await db.user.create(data=data)
+        return {'user': user, 'created': True}
+
+    except ValidationError as ve:
+        # Handle validation errors for user_data
+        raise HTTPException(status_code=422, detail=f"Validation Error: {ve.errors()}")
+
+    except db.exceptions.UniqueConstraintViolation as ucve:
+        # Handle database unique constraint violations
+        raise HTTPException(status_code=409, detail=f"User with the given email already exists.")
+
+    except db.exceptions.DatabaseError as de:
+        # Handle general database errors
+        raise HTTPException(status_code=500, detail="An error occurred while accessing the database. Please try again later.")
+
+    except Exception as e:
+        # Handle unexpected exceptions
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
 async def delete_user_by_email(email: str):
