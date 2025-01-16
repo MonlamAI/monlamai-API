@@ -39,9 +39,10 @@ async def create_user(user_data: UserCreateSchema):
         user = await get_user_by_email(user_data.email)
         if user:
             return {'user': user, 'created': False}
-
+        id= await db.user.count()
         # Prepare the data to create a new user
         data = {
+            'id': id+1,
             'username': user_data.name,
             'email': user_data.email,
             'picture': user_data.picture,
