@@ -36,10 +36,8 @@ class UserCreateSchema(BaseModel):
 async def create_user_route(user_data: UserCreateSchema, client_request: Request):
     # Extract user data from the input schema
     user = user_data.dict()
-    
     # Get client metadata
     client_ip, source_app, city, country = get_client_metadata(client_request)
-    
     # Attempt to create a new user in the database
     try:
         user_res = await create_user(user)

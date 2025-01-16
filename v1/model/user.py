@@ -15,26 +15,22 @@ async def get_user_by_id(id: int):
 
 
 async def create_user(user_data: dict):
-    created = False
     user = await get_user_by_email(user_data['email'])
+    if user:
+        return {'user':user,'created':False}
     
-    if not user:
-        data = {
-            'username': user_data['name'],
-            'email': user_data['email'],
-            'picture': user_data.get('picture'),
-        }
-
-        # Conditionally add fields if they exist in user_data
-        optional_fields = ['gender', 'city', 'country', 'interest', 'profession','birth_date']
-        
-        for field in optional_fields:
-            if field in user_data:
-                data[field] = user_data[field]
-        created = True
-        user = await db.user.create(data=data)
+    data = {
+        'username': user_data['name'],
+        'email': user_data['email'],
+        'picture': user_data.get('picture'),
+    }
+    optional_fields = ['gender', 'city', 'country', 'interest', 'profession','birth_date']
+    for field in optional_fields:
+        if field in user_data:
+            data[field] = user_data[field]
+    user = await db.user.create(data=data)
     
-    return {'user':user,'created':created}
+    return {'user':user,'created':True}
 
 
 async def delete_user_by_email(email: str):
