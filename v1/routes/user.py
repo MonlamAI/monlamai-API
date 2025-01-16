@@ -46,8 +46,8 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
     
     # Check if user creation was successful
     print(userdb)
-    # if not userdb or not userdb.id:
-    #     raise HTTPException(status_code=400, detail="User creation failed")
+    if not userdb or not userdb.id:
+        raise HTTPException(status_code=400, detail="User creation failed")
     
     # Populate the user data dictionary with additional metadata
     user.update({

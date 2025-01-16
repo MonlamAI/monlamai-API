@@ -20,8 +20,8 @@ async def create_user(user_data: dict):
         return {'user':user,'created':False}
     
     data = {
-        'username': user_data['name'],
-        'email': user_data['email'],
+        'username': user_data.get('name'),
+        'email': user_data.get('email'),
         'picture': user_data.get('picture'),
     }
     optional_fields = ['gender', 'city', 'country', 'interest', 'profession','birth_date']
