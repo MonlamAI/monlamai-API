@@ -1,5 +1,8 @@
 from v1.Config.Connection import db,prisma_connection
 from datetime import datetime, timezone
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from datetime import date
 
 async def get_user_by_email(email: str):
     # Manually retrieve the session object
@@ -15,7 +18,21 @@ async def get_user_by_id(id: int):
         return user  
 
 
-async def create_user(user_data: dict):
+class UserCreateSchema(BaseModel):
+    email: EmailStr
+    name: str
+    picture: Optional[str] = None
+    role: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    gender: Optional[str] = None
+    interest: Optional[str] = None
+    profession: Optional[str] = None
+    birth_date: Optional[date] = None
+
+
+async def create_user(user_data: UserCreateSchema):
+    print("data" ,user_data)
     # Check if user already exists
     user = await get_user_by_email(user_data.email)
     if user:

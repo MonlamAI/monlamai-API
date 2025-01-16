@@ -12,18 +12,38 @@ def get_first_ip(ip_string):
     return ip_list[0] if ip_list else ''
 
 def get_client_metadata(client_request):
-    client_ip = client_request.headers.get('Client-IP', 'Unknown')
-    origin_ip = client_request.client.host
-    origin = client_request.headers.get('Origin', 'Unknown')
-    referer = client_request.headers.get('Referer', 'Unknown')
-   
-    source_app = origin if origin != 'Unknown' else referer
-    client_ip = client_ip if client_ip else origin_ip
     try:
-      city, country = get_geolocation(get_first_ip(client_ip))
-    except Exception:
-      city,country="",""
-    return client_ip, source_app,city, country
+        # Extract client IP from headers, default to 'Unknown'
+        client_ip = client_request.headers.get('Client-IP', 'Unknown')
+        origin_ip = client_request.client.host  # Fallback to request's origin IP
+        origin = client_request.headers.get('Origin', 'Unknown')
+        referer = client_request.headers.get('Referer', 'Unknown')
+        
+        # Determine source app based on Origin or Referer
+        source_app = origin if origin != 'Unknown' else referer
+        
+        # Use origin IP if no client IP is available
+        client_ip = client_ip if client_ip != 'Unknown' else origin_ip
+        
+        # Handle IP-related errors gracefully
+        if not client_ip or client_ip == 'Unknown':
+            raise ValueError("Invalid client IP detected")
+        
+        # Attempt to get geolocation info
+        try:
+            city, country = get_geolocation(get_first_ip(client_ip))
+        except Exception as geo_ex:
+            # Log the geolocation error and set defaults
+            print(f"Geolocation error: {geo_ex}")
+            city, country = "", ""
+        
+    except Exception as e:
+        # General error handling, log and provide safe defaults
+        print(f"Error in get_client_metadata: {e}")
+        client_ip, source_app, city, country = "Unknown", "Unknown", "", ""
+    
+    # Return all metadata
+    return client_ip, source_app, city, country
 
 def get_geolocation(ip_address):
     api_key = os.getenv('GEOAPIFY_API_KEY')

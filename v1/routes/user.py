@@ -42,13 +42,11 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
         userdb = user_res['user']
         print("creted user",userdb)
     except Exception as e:
+        print(str(e))
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
-    try:
-       client_ip, source_app, city, country = get_client_metadata(client_request)
-    except Exception as e:
-       print(str(e))
-       client_ip, source_app, city, country = "", "", "", ""
+    client_ip, source_app, city, country = get_client_metadata(client_request)
+  
     # Check if user creation was successful
     print("continueing",userdb)
     if not userdb or not userdb.id:
