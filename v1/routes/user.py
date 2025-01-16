@@ -35,18 +35,22 @@ class UserCreateSchema(BaseModel):
 @router.post("/create")
 async def create_user_route(user_data: UserCreateSchema, client_request: Request):
     # Get client metadata
-    client_ip, source_app, city, country = get_client_metadata(client_request)
     # Attempt to create a new user in the database
     print('creating user')
     try:
         user_res = await create_user(user_data)
         userdb = user_res['user']
-        print(userdb)
+        print("creted user",userdb)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
+    try:
+       client_ip, source_app, city, country = get_client_metadata(client_request)
+    except Exception as e:
+       print(str(e))
+       client_ip, source_app, city, country = "", "", "", ""
     # Check if user creation was successful
-    print(userdb)
+    print("continueing",userdb)
     if not userdb or not userdb.id:
         raise HTTPException(status_code=400, detail="User creation failed")
     
