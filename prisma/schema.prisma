@@ -65,7 +65,7 @@ model Translation {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserTranslations", fields: [userId], references: [id])
+    user   User? @relation("UserTranslations", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -85,7 +85,7 @@ model SpeechToTexts {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserSpeechToTexts", fields: [userId], references: [id])
+    user   User? @relation("UserSpeechToTexts", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -104,7 +104,7 @@ model TextToSpeech {
     city         String?
     country      String?
 
-    user           User? @relation("UserTextToSpeechs", fields: [userId], references: [id])
+    user           User? @relation("UserTextToSpeechs", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
     userId         Int?
     liked_count    Int   @default(0)
     disliked_count Int   @default(0)
@@ -124,7 +124,7 @@ model OldSpeechToTexts {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserSpeechToTexts2", fields: [userId], references: [id])
+    user   User? @relation("UserSpeechToTexts2", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -143,7 +143,7 @@ model OldTextToSpeech {
     city         String?
     country      String?
 
-    user           User? @relation("UserTextToSpeechs2", fields: [userId], references: [id])
+    user           User? @relation("UserTextToSpeechs2", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
     userId         Int?
     liked_count    Int   @default(0)
     disliked_count Int   @default(0)
@@ -163,7 +163,7 @@ model OCR {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserOCRs", fields: [userId], references: [id])
+    user   User? @relation("UserOCRs", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -173,7 +173,7 @@ model OCR {
 model Thread {
   id          String       @id @default(uuid())
   title       String
-  createdBy   User      @relation("UserThreads", fields: [createdById], references: [id])
+  createdBy   User      @relation("UserThreads", fields: [createdById], references: [id],onDelete: Cascade,onUpdate: Cascade)
   createdById Int
   chats       Chat[]    @relation("ThreadChats")
   show        Boolean   @default(true)
@@ -186,9 +186,9 @@ model Chat {
   id           String   @id @default(uuid())
   input       String
   output      String
-  thread      Thread    @relation("ThreadChats", fields: [threadId], references: [id])
+  thread      Thread    @relation("ThreadChats", fields: [threadId], references: [id],onDelete: Cascade,onUpdate: Cascade)
   threadId    String
-  sender      User      @relation("UserChats", fields: [senderId], references: [id])
+  sender      User      @relation("UserChats", fields: [senderId], references: [id],onDelete: Cascade,onUpdate: Cascade)
   senderId    Int
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
