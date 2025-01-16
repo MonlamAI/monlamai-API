@@ -1,5 +1,6 @@
 from v1.Config.Connection import db,prisma_connection
 from datetime import datetime, timezone
+
 async def get_user_by_email(email: str):
     # Manually retrieve the session object
         user = await db.user.find_unique(
@@ -15,22 +16,25 @@ async def get_user_by_id(id: int):
 
 
 async def create_user(user_data: dict):
-    user = await get_user_by_email(user_data['email'])
+    # Check if user already exists
+    user = await get_user_by_email(user_data.email)
     if user:
-        return {'user':user,'created':False}
+        return {'user': user, 'created': False}
     
+    # Prepare the data to create a new user
     data = {
-        'username': user_data.get('name'),
-        'email': user_data.get('email'),
-        'picture': user_data.get('picture'),
+        'username': user_data.name,
+        'email': user_data.email,
+        'picture': user_data.picture,
     }
-    optional_fields = ['gender', 'city', 'country', 'interest', 'profession','birth_date']
+    optional_fields = ['gender', 'city', 'country', 'interest', 'profession', 'birth_date']
     for field in optional_fields:
-        if field in user_data:
-            data[field] = user_data[field]
-    user = await db.user.create(data=data)
+        if getattr(user_data, field, None):
+            data[field] = getattr(user_data, field)
     
-    return {'user':user,'created':True}
+    # Create the new user
+    user = await db.user.create(data=data)
+    return {'user': user, 'created': True}
 
 
 async def delete_user_by_email(email: str):
