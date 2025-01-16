@@ -19,7 +19,10 @@ def get_client_metadata(client_request):
    
     source_app = origin if origin != 'Unknown' else referer
     client_ip = client_ip if client_ip else origin_ip
-    city, country = get_geolocation(get_first_ip(client_ip))
+    try:
+      city, country = get_geolocation(get_first_ip(client_ip))
+    except Exception:
+      city,country="",""
     return client_ip, source_app,city, country
 
 def get_geolocation(ip_address):

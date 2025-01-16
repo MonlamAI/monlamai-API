@@ -37,6 +37,7 @@ async def create_user_route(user_data: UserCreateSchema, client_request: Request
     # Get client metadata
     client_ip, source_app, city, country = get_client_metadata(client_request)
     # Attempt to create a new user in the database
+    print('creating user')
     try:
         user_res = await create_user(user_data)
         userdb = user_res['user']
