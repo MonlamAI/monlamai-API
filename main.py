@@ -97,12 +97,11 @@ def read_root():
 def get_token():
     
     API_TOKEN = os.getenv("MODEL_AUTH") 
-    LLM_URL = os.getenv("LLM_MODEL_URL")
     MT_URL = os.getenv("MT_MODEL_URL")
     AUTH_KEY = os.getenv("API_KEY")  
       
       
-    return {"token":API_TOKEN,"llm_url":LLM_URL,'mt_url':MT_URL,'auth_key':AUTH_KEY}
+    return {"token":API_TOKEN,'mt_url':MT_URL,'auth_key':AUTH_KEY}
 
 
 @app.get("/share/{inference_id}")
