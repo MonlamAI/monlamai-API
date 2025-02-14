@@ -43,7 +43,6 @@ class Base64Input(BaseModel):
     input: str
     lang: str
     
-
 @router.post("/file")
 async def speech_to_text_func(
     client_request: Request,
@@ -115,10 +114,6 @@ async def speech_to_text_func(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"audio processing failed: {str(e)}")
             
-     
-           
-
-
 
 @router.post("/")
 async def speech_to_text_func(request:Input, client_request: Request):
@@ -170,7 +165,6 @@ async def speech_to_text_func(request:Input, client_request: Request):
     
        except Exception as e:
         raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
-
 
 
 @router.put("/{id}")

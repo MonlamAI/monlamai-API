@@ -114,12 +114,15 @@ async def share_inference(inference_id: str):
     raise HTTPException(status_code=404, detail=f"Inference with ID {inference_id} not found in any table.")
 
 
+def under_maintenance():
+    raise HTTPException(status_code=503, detail="Service is under maintenance")
+
 # Include the v1 router with the prefix /api/v1
 app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
 app.include_router(translationRoute, prefix="/api/v1/translation",dependencies=[Depends(verify_token)],tags=["translation"])
 app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_token)],tags=["ocr"])
-app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(verify_token)],tags=["speech to text"])
-app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(verify_token)],tags=["text to speech"])
+app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(under_maintenance)],tags=["speech to text"])
+app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(under_maintenance)],tags=["text to speech"])
 app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verify_token)],tags=["file upload"])
 app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verify_token)],tags=["user"])
 app.include_router(chatRoute, prefix="/api/v1/chat", dependencies=[Depends(verify_token)],tags=["chat"])

@@ -248,6 +248,9 @@ async def list_threads_post(user_email: str, pagination: PaginationRequest):
         # Calculate the offset based on the page number and limit
         offset = (pagination.page - 1) * pagination.limit
         user = await get_user_by_email(user_email)
+        if not user:
+            print(user)
+            raise HTTPException(status_code=404, detail="User not found")
         user_id = user.id
         threads = await get_threads(user_id, limit=pagination.limit, offset=offset)
         total= await get_total_threads_count(user_id)
