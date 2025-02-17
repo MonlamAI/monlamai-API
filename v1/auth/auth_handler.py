@@ -8,8 +8,8 @@ ALGORITHM = "HS256"  # The algorithm used for encoding/decoding the JWT
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
-    API_TOKEN = os.getenv("API_KEY") 
     
+    API_TOKEN = os.getenv("API_KEY") 
     if not token:
         # If no token is provided, raise a 401 Unauthorized error
         raise HTTPException(

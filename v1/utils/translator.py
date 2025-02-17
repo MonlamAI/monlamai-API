@@ -155,7 +155,7 @@ async def translator_stream_llm(text: str, direction: str,inferenceID, on_comple
                                     print(f"Error decoding JSON: {str(e)}")
                                     continue
                                 text_value = parsed_data.get("text", "")
-                                generated_text = parsed_data.get("generated_text")
+                                generated_text = parsed_data.get("generated_text","")
                               
                                 if text_value:
                                     yield f"data: {json.dumps({'text': text_value,'id':inferenceID})}\n\n"
