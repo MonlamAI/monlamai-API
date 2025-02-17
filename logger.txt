@@ -1,0 +1,12 @@
+2025-02-17 13:48:46,909 - INFO - HTTP Request: GET http://localhost:57386/status "HTTP/1.1 200 OK"
+2025-02-17 13:48:52,687 - INFO - HTTP Request: GET http://localhost:57401/status "HTTP/1.1 200 OK"
+2025-02-17 13:49:17,829 - INFO - Client IP: 127.0.0.1 | Time: 2025-02-17 13:49:17 | Method: POST | Path: /api/v1/translation/stream
+2025-02-17 13:49:21,468 - INFO - HTTP Request: POST https://llm-api-with-langchain.onrender.com/translation_generate_stream "HTTP/1.1 200 OK"
+2025-02-17 13:49:21,469 - INFO - data: {"text": "JSON \u0f51
+2025-02-17 13:49:21,469 - INFO - data: {"generated_text": "JSON \u0f51\u0fb2\u0f0b\u0f58\u0f44\u0f0b\u0f62\u0f9f\u0f42\u0f66\u0f0b\u0f50\u0f7c(JWTs)\u0f51\u0f44\u0f0b\u0f63\u0fb7\u0f53\u0f0b\u0f51\u0f74\u0f0b\u0f41\u0fb1\u0f7a\u0f51\u0f0b\u0f40\u0fb1\u0f72\u0f0b\u0f58\u0f49\u0f58\u0f0b\u0f63\u0f66\u0f0b\u0f40\u0fb1\u0f72\u0f0b Tiptap \u0f62\u0fa9\u0f7c\u0f58\u0f0b\u0f66\u0f92\u0fb2\u0f72\u0f42\u0f0b\u0f46\u0f66\u0f0b\u0f47\u0f72\u0f0b\u0f63\u0f9f\u0f62\u0f0b\u0f56\u0f51\u0f7a\u0f0b\u0f60\u0f47\u0f42\u0f66\u0f0b\u0f56\u0f5f\u0f7c\u0f0b\u0f51\u0f42\u0f7c\u0f66\u0f0b\u0f58\u0f72\u0f53\u0f0b\u0f66\u0fa6\u0fb1\u0f7c\u0f44\u0f66\u0f0d \u0f62\u0f97\u0f7a\u0f66\u0f0b\u0f58\u0f60\u0f72\u0f0b\u0f63\u0f58\u0f0b\u0f66\u0f9f\u0f7c\u0f53\u0f0b\u0f60\u0f51\u0f72\u0f66\u0f0b\u0f5a\u0f7c\u0f51\u0f0b\u0f63\u0f9f\u0f0b\u0f51\u0f44\u0f0b\u0f50\u0f7c\u0f53\u0f0b\u0f66\u0f90\u0fb1\u0f7a\u0f51\u0f0b\u0f42\u0f49\u0f72\u0f66\u0f0b\u0f40\u0fb1\u0f72\u0f0b\u0f46\u0f7a\u0f51\u0f0b\u0f51\u0f74\u0f0b JWTs \u0f56\u0f5f\u0f7c\u0f0b\u0f66\u0f90\u0fb2\u0f74\u0f53\u0f0b\u0f51\u0f44\u0f0b\u0f51\u0f7c\u0f0b\u0f51\u0f58\u0f0b\u0f56\u0fb1\u0f7a\u0f51\u0f0b\u0f50\u0f56\u0f66\u0f0b\u0f40\u0fb1\u0f72\u0f0b\u0f42\u0f7c\u0f0b\u0f62\u0f72\u0f58\u0f0b\u0f42\u0f66\u0f63\u0f0b\u0f56\u0f7c\u0f62\u0f0b\u0f56\u0f66\u0f9f\u0f53\u0f0b\u0f61\u0f7c\u0f51\u0f0b\u0f63\u0f0d \u0f5e\u0f72\u0f56\u0f0b\u0f55\u0fb2\u0f60\u0f72\u0f0b\u0
+2025-02-17 13:57:58,040 - INFO - HTTP Request: GET http://localhost:57937/status "HTTP/1.1 200 OK"
+2025-02-17 13:58:44,449 - INFO - HTTP Request: GET http://localhost:57993/status "HTTP/1.1 200 OK"
+2025-02-17 13:58:57,718 - INFO - Client IP: 127.0.0.1 | Time: 2025-02-17 13:58:57 | Method: POST | Path: /api/v1/translation/stream
+2025-02-17 13:59:01,697 - INFO - HTTP Request: POST https://llm-api-with-langchain.onrender.com/translation_generate_stream "HTTP/1.1 200 OK"
+2025-02-17 13:59:03,209 - INFO - Tracker created for user_id: None
+2025-02-17 13:59:05,090 - INFO - HTTP Request: POST http://localhost:57993/ "HTTP/1.1 200 OK"
