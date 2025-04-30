@@ -13,33 +13,28 @@ enum UserRole {
     User
     Subscriber
 }
-enum Gender{
-    Male
-    Female
-    Other
-}
 
 model User {
-    id            Int      @id @default(autoincrement())
-    username      String
-    email         String   @unique
-    picture       String?
-    role          UserRole @default(User)
-    createdAt     DateTime @default(now())
-    profession    String?
-    interest      String?
-    birth_date    DateTime?
-    gender        Gender?   
-    city          String?
-    country       String?
-    translations  Translation[]   @relation("UserTranslations")
-    speechToTexts SpeechToTexts[] @relation("UserSpeechToTexts")
-    textToSpeechs TextToSpeech[]  @relation("UserTextToSpeechs")
+    id               Int                @id @default(autoincrement())
+    username         String
+    email            String             @unique
+    picture          String?
+    role             UserRole           @default(User)
+    createdAt        DateTime           @default(now())
+    profession       String?
+    interest         String?
+    birth_date       DateTime?
+    gender           String?
+    city             String?
+    country          String?
+    translations     Translation[]      @relation("UserTranslations")
+    speechToTexts    SpeechToTexts[]    @relation("UserSpeechToTexts")
+    textToSpeechs    TextToSpeech[]     @relation("UserTextToSpeechs")
     oldSpeechToTexts OldSpeechToTexts[] @relation("UserSpeechToTexts2")
     oldTextToSpeechs OldTextToSpeech[]  @relation("UserTextToSpeechs2")
-    ocrs          OCR[]           @relation("UserOCRs")
-    threads     Thread[]  @relation("UserThreads")
-    chats       Chat[]    @relation("UserChats")
+    ocrs             OCR[]              @relation("UserOCRs")
+    threads          Thread[]           @relation("UserThreads")
+    chats            Chat[]             @relation("UserChats")
 }
 
 model WaitList {
@@ -65,7 +60,7 @@ model Translation {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserTranslations", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
+    user   User? @relation("UserTranslations", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -85,7 +80,7 @@ model SpeechToTexts {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserSpeechToTexts", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
+    user   User? @relation("UserSpeechToTexts", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -104,12 +99,11 @@ model TextToSpeech {
     city         String?
     country      String?
 
-    user           User? @relation("UserTextToSpeechs", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
+    user           User? @relation("UserTextToSpeechs", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     userId         Int?
     liked_count    Int   @default(0)
     disliked_count Int   @default(0)
 }
-
 
 model OldSpeechToTexts {
     id           String   @id @default(uuid())
@@ -124,7 +118,7 @@ model OldSpeechToTexts {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserSpeechToTexts2", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
+    user   User? @relation("UserSpeechToTexts2", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -143,12 +137,11 @@ model OldTextToSpeech {
     city         String?
     country      String?
 
-    user           User? @relation("UserTextToSpeechs2", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
+    user           User? @relation("UserTextToSpeechs2", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     userId         Int?
     liked_count    Int   @default(0)
     disliked_count Int   @default(0)
 }
-
 
 model OCR {
     id           String   @id @default(uuid())
@@ -163,7 +156,7 @@ model OCR {
     country      String?
     editOutput   String?
 
-    user   User? @relation("UserOCRs", fields: [userId], references: [id],onDelete: Cascade,onUpdate: Cascade)
+    user   User? @relation("UserOCRs", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     userId Int?
 
     liked_count    Int @default(0)
@@ -171,32 +164,32 @@ model OCR {
 }
 
 model Thread {
-  id          String       @id @default(uuid())
-  title       String
-  createdBy   User      @relation("UserThreads", fields: [createdById], references: [id],onDelete: Cascade,onUpdate: Cascade)
-  createdById Int
-  chats       Chat[]    @relation("ThreadChats")
-  show        Boolean   @default(true)
-  is_completed    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+    id           String   @id @default(uuid())
+    title        String
+    createdBy    User     @relation("UserThreads", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    createdById  Int
+    chats        Chat[]   @relation("ThreadChats")
+    show         Boolean  @default(true)
+    is_completed Boolean  @default(false)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 }
 
 model Chat {
-  id           String   @id @default(uuid())
-  input       String
-  output      String
-  thread      Thread    @relation("ThreadChats", fields: [threadId], references: [id],onDelete: Cascade,onUpdate: Cascade)
-  threadId    String
-  sender      User      @relation("UserChats", fields: [senderId], references: [id],onDelete: Cascade,onUpdate: Cascade)
-  senderId    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  liked_count    Int @default(0)
-  disliked_count Int @default(0)
-  model          String
-  latency        Int
-  token          String?
-  edit_input     String?
-  edit_output    String?
+    id             String   @id @default(uuid())
+    input          String
+    output         String
+    thread         Thread   @relation("ThreadChats", fields: [threadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    threadId       String
+    sender         User     @relation("UserChats", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    senderId       Int
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    liked_count    Int      @default(0)
+    disliked_count Int      @default(0)
+    model          String
+    latency        Int
+    token          String?
+    edit_input     String?
+    edit_output    String?
 }
