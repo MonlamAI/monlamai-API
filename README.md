@@ -59,10 +59,10 @@ API_KEY=your_api_key
 MT_MODEL_URL=your_translation_model_url
 
 # AWS S3 Configuration (for file uploads)
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_ACCESS_ID=your_aws_access_key
+AWS_SECRET_KEY=your_aws_secret_key
 AWS_REGION=your_aws_region
-S3_BUCKET=your_s3_bucket_name
+AWS_BUCKET_NAME=your_s3_bucket_name
 
 # Other Services
 # Add any other service-specific environment variables here

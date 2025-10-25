@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException,Request,Query,UploadFile,File,Form
-from v1.utils.speech_recognition import speech_to_text_tibetan,speech_to_text_english
+# from v1.utils.speech_recognition import speech_to_text_tibetan,speech_to_text_english
 from v1.libs.get_buffer import get_buffer
 from pydantic import BaseModel
 from typing import Optional
@@ -9,7 +9,9 @@ from v1.model.edit_inference import edit_inference
 import asyncio
 import uuid
 import ffmpeg
-import os 
+import os
+import base64
+import httpx
 import tempfile
 from typing import Tuple
 from v1.utils.mixPanel_track import track_signup_input,track_user_input
@@ -49,32 +51,31 @@ async def speech_to_text_func(
     file: UploadFile = File(...),  # Upload file directly
     lang: str = Form(...)           # Language as a form field
 ):
-    user_id=await get_user_id_from_cookie(client_request)
+    user_id = await get_user_id_from_cookie(client_request)
 
-    
     try:
-        # Read the audio content from the uploaded file
         audio = await file.read()
-        content_type = file.content_type
+        
         flac_audio, flac_filename = await convert_to_flac(audio, file.filename)
-        file_url=''
-        # Upload FLAC file to S3
+
         flac_file = tempfile.NamedTemporaryFile(delete=False)
+        file_url = ""
         try:
             flac_file.write(flac_audio)
-            flac_file.seek(0)  # Reset the file pointer for reading
-
-            file_url = await upload_file_to_s3(flac_file, 'audio/flac', 'stt/'+flac_filename)
+            flac_file.seek(0)
+            file_url = await upload_file_to_s3(flac_file, 'audio/flac', 'stt/' + flac_filename)
         finally:
             flac_file.close()
-            os.unlink(flac_file.name)  # Cleanup the temporary FLAC file
+            os.unlink(flac_file.name)
+
+        text_data, response_time = await transcribe_audio(flac_audio)
+
         client_ip, source_app, city, country = get_client_metadata(client_request)
-        text_data, response_time = await transcribe_audio(flac_audio, lang )
         generated_id = str(uuid.uuid4())
-        
+
         stt_data = {
             "id": generated_id,
-            "input": file_url, 
+            "input": file_url,
             "output": text_data,
             "response_time": response_time,
             "ip_address": client_ip,
@@ -84,47 +85,59 @@ async def speech_to_text_func(
             "city": city,
             "country": country,
         }
-        
-        # Asynchronously create the speech-to-text record
+
         mixPanel_data = {
-                    "user_id": user_id, 
-                    "type": 'SpeechToText',
-                    "input": file_url,
-                    "output": text_data,
-                    "ip_address": client_ip,
-                    "city": city,
-                    "country": country,
-                    "response_time": response_time,
-                    "version": "1.0.0",
-                    "source_app": source_app,
-                }
-        if user_id is None:
-            mixPanel_data['user_id'] = "random_user"
-        tracked_event = track_user_input(mixPanel_data, client_request)
-        asyncio.create_task(create_speech_to_text(stt_data))
-        
+            "user_id": user_id or "random_user",
+            "type": "SpeechToText",
+            "input": file_url,
+            "output": text_data,
+            "ip_address": client_ip,
+            "city": city,
+            "country": country,
+            "response_time": response_time,
+            "version": "1.0.0",
+            "source_app": source_app,
+        }
+
+        loop = asyncio.get_event_loop()
+
+        # Schedule create_speech_to_text safely
+        if asyncio.iscoroutinefunction(create_speech_to_text):
+            loop.create_task(create_speech_to_text(stt_data))
+        else:
+            loop.run_in_executor(None, create_speech_to_text, stt_data)
+
+        # Schedule track_user_input safely
+        if asyncio.iscoroutinefunction(track_user_input):
+            loop.create_task(track_user_input(mixPanel_data, client_request))
+        else:
+            loop.run_in_executor(None, track_user_input, mixPanel_data, client_request)
+
         return {
             "success": True,
             "id": generated_id,
-            "file":file_url,
+            "file": file_url,
             "output": text_data,
             "responseTime": response_time,
         }
-    
+
     except Exception as e:
+        import traceback
+        print("❌ [ERROR] Exception during audio processing:")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"audio processing failed: {str(e)}")
             
 
 @router.post("/")
 async def speech_to_text_func(request:Input, client_request: Request):
        user_id=await get_user_id_from_cookie(client_request)
-
+    
        try:
         audio_url=request.input
-        lang=request.lang
         audio=await get_buffer(audio_url)
         client_ip, source_app,city,country = get_client_metadata(client_request)
-        text_data, response_time = await transcribe_audio(audio, lang)
+        flac_audio, flac_filename = await convert_to_flac(audio, request.input)
+        text_data, response_time = await transcribe_audio(flac_audio)
         generated_id=  str(uuid.uuid4())
         stt_data = {
         "id":generated_id,
@@ -155,7 +168,11 @@ async def speech_to_text_func(request:Input, client_request: Request):
             mixPanel_data['user_id'] = "random_user"
         tracked_event = track_user_input(mixPanel_data, client_request)
         
-        asyncio.create_task(create_speech_to_text(stt_data))
+        loop = asyncio.get_event_loop()
+        if asyncio.iscoroutinefunction(create_speech_to_text):
+            loop.create_task(create_speech_to_text(stt_data))
+        else:
+            loop.run_in_executor(None, create_speech_to_text, stt_data)
         return {
             "success": True,
             "id":generated_id,
@@ -164,7 +181,10 @@ async def speech_to_text_func(request:Input, client_request: Request):
         }
     
        except Exception as e:
-        raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
+           import traceback
+           print("[ERROR] Exception during /api/v1/stt processing:")
+           traceback.print_exc()
+           raise HTTPException(status_code=500, detail=f"audio failed: {str(e)}")
 
 
 @router.put("/{id}")
@@ -182,21 +202,64 @@ async def update_speechtotext(id: int, action: str = Query(..., description="Act
     return {"message": f"Record {action}d successfully", "data": updated_record}
 
 
+import base64
 
-
+async def transcribe_audio(audio_bytes: bytes):
+    """
+    Transcribe Tibetan audio using the Hugging Face endpoint that expects base64 input.
+    """
     
+    MODEL_AUTH = os.getenv("MODEL_AUTH")
+    MODEL_URL = os.getenv("STT_MODEL_URL_TIBETAN") 
 
-async def transcribe_audio(audio, lang):
-    if lang and lang != 'bo':
-        # Call Whisper if a specific language is provided and it's not 'bo'
-        text_data =await speech_to_text_english(audio)
-        response_time = round(text_data['response_time'] * 1000, 4)
-    else:
-        # Call general speech-to-text function for language 'bo'
-        text_data = await speech_to_text_tibetan(audio)
-        response_time = round(text_data['response_time'] * 1000, 4)
-    text_data = text_data['text']
-    return text_data, response_time
+    if not MODEL_AUTH or not MODEL_URL:
+        raise HTTPException(status_code=500, detail="Missing MODEL_AUTH or STT_MODEL_URL_TIBETAN in environment")
+
+    headers = {
+        "Authorization": f"Bearer {MODEL_AUTH}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    # Encode audio as base64
+    audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+    payload = {
+        "inputs": audio_b64
+    }
+    
+    try:
+        start_time = asyncio.get_event_loop().time()
+
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(MODEL_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+        end_time = asyncio.get_event_loop().time()
+        response_time = end_time - start_time
+        
+
+        # Hugging Face models usually return text under 'text' key
+        text = data.get("text", "")
+        print(text)
+        return text, round(response_time * 1000, 4)
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"HTTP error: {e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Speech-to-text failed: {str(e)}") 
+
+
+    # if lang and lang != 'bo':
+    #     # Call Whisper if a specific language is provided and it's not 'bo'
+    #     text_data =await speech_to_text_english(audio)
+    #     response_time = round(text_data['response_time'] * 1000, 4)
+    # else:
+    #     # Call general speech-to-text function for language 'bo'
+    #     text_data = await speech_to_text_tibetan(audio)
+    #     response_time = round(text_data['response_time'] * 1000, 4)
+    # text_data = text_data['text']
+    # return text_data, response_time
 
 async def convert_to_flac(audio_data: bytes, input_filename: str) -> Tuple[bytes, str]:
     """
