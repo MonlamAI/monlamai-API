@@ -93,6 +93,11 @@ async def log_requests(request: Request, call_next):
 def read_root():
     return {"message": "Welcome to API v1"}
 
+# Health check endpoint for Render
+@app.get("/healthz")
+def health_check():
+    return {"status": "ok"}
+
 @app.get("/get-token")
 def get_token():
     
