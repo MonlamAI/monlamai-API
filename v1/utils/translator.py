@@ -96,7 +96,7 @@ async def translator_llm(text: str, direction: str ):
             if translation and translation.strip():
                 return {"translation": translation, "responseTime": response_time}
     language =  detect_language_from_code(direction)
-    print("laguage is", language)
+    
     try:
         start_time = time.time()  # Record start time
         async with httpx.AsyncClient() as client:
@@ -108,7 +108,6 @@ async def translator_llm(text: str, direction: str ):
                 },
                 headers=llm_headers,
             )
-            print("Response is", response.text)
         if response.status_code != 200:
             raise Exception("status code not 200")
         
