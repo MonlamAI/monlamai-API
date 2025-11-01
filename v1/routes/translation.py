@@ -32,6 +32,7 @@ MIXPANEL_TOKEN = os.getenv('MIXPANEL_TOKEN', '')
 MAX_CONCURRENT_REQUESTS = 5
 CHUNK_MAX_SIZE = 50
 VERSION = "1.0.0"
+DEFAULT_STREAM_PROVIDER = 'mt'
 
 # Setup router and rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -270,67 +271,65 @@ async def stream_translate(request: TranslationInput, client_request: Request):
                     "city": city,
                     "country": country,
                 }))
-        
-        try:
-            # First, attempt LLM streaming translation
-            translated = await translator_stream_llm(
-                request.input, 
-                request.target,
-                inference_id,
-                on_complete=on_complete
-            )
-            return translated
-        
-        except Exception as llm_error:
-            # If LLM translation fails, fall back to Machine Translation streaming
-            print(f"LLM stream translation failed. Falling back to MT: {llm_error}")
-            
-            async def mt_on_complete(generated_text: str, response_time: float) -> None:
-                """
-                Callback function for MT stream translation completion
-                
-                Args:
-                    generated_text (str): Full translated text
-                    response_time (float): Translation response time
-                """
-                if generated_text:
-                    input_lang = detect_language(request.input)
-                    await track_translation_event(
-                        user_id=user_id,
-                        request=client_request,
-                        input_text=request.input,
-                        output_text=generated_text,
-                        input_lang=input_lang,
-                        target_lang=request.target,
-                        response_time=response_time,
-                        model="matlad",
-                        is_stream=True
-                    )
-                    client_ip, source_app, city,country = get_client_metadata(client_request)
+        async def mt_on_complete(generated_text: str, response_time: float) -> None:
+            if generated_text:
+                input_lang = detect_language(request.input)
+                await track_translation_event(
+                    user_id=user_id,
+                    request=client_request,
+                    input_text=request.input,
+                    output_text=generated_text,
+                    input_lang=input_lang,
+                    target_lang=request.target,
+                    response_time=response_time,
+                    model="matlad",
+                    is_stream=True
+                )
+                client_ip, source_app, city,country = get_client_metadata(client_request)
 
-                    asyncio.create_task(create_translation({
-                        "id": inference_id,
-                        "input": request.input, 
-                        "output": generated_text,  
-                        "input_lang": input_lang, 
-                        "output_lang": request.target, 
-                        "response_time": response_time,  
-                        "user_id": user_id,
-                        "ip_address": client_ip,
-                        "version": "1.0.0",
-                        "source_app": source_app,
-                        "city": city,
-                        "country": country,
-                    }))
-            
-            # Fall back to Machine Translation streaming
-            translated = await translator_stream_mt(
-                request.input, 
-                request.target,
-                inference_id,
-                on_complete=mt_on_complete
-            )
-            return translated
+                asyncio.create_task(create_translation({
+                    "id": inference_id,
+                    "input": request.input, 
+                    "output": generated_text,  
+                    "input_lang": input_lang, 
+                    "output_lang": request.target, 
+                    "response_time": response_time,  
+                    "user_id": user_id,
+                    "ip_address": client_ip,
+                    "version": "1.0.0",
+                    "source_app": source_app,
+                    "city": city,
+                    "country": country,
+                }))
+
+        provider_order = ["mt", "llm"] if DEFAULT_STREAM_PROVIDER == "mt" else ["llm", "mt"]
+
+        async def run_provider(kind: str):
+            if kind == "llm":
+                return await translator_stream_llm(
+                    request.input,
+                    request.target,
+                    inference_id,
+                    on_complete=on_complete
+                )
+            else:
+                return await translator_stream_mt(
+                    request.input,
+                    request.target,
+                    inference_id,
+                    on_complete=mt_on_complete
+                )
+
+        last_error = None
+        for provider in provider_order:
+            try:
+                return await run_provider(provider)
+            except Exception as e:
+                last_error = e
+                print(f"{provider.upper()} stream translation failed: {e}")
+                continue
+        if last_error:
+            raise last_error
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")

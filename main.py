@@ -93,6 +93,11 @@ async def log_requests(request: Request, call_next):
 def read_root():
     return {"message": "Welcome to API v1"}
 
+# Health check endpoint for Render
+@app.get("/healthz")
+def health_check():
+    return {"status": "ok"}
+
 @app.get("/get-token")
 def get_token():
     
@@ -120,7 +125,7 @@ def under_maintenance():
 app.include_router(checkRoute, prefix="/api/v1/check",tags=["check"])
 app.include_router(translationRoute, prefix="/api/v1/translation",dependencies=[Depends(verify_token)],tags=["translation"])
 app.include_router(ocrRoute, prefix="/api/v1/ocr", dependencies=[Depends(verify_token)],tags=["ocr"])
-app.include_router(sttRoute, prefix="/api/v1/stt", dependencies=[Depends(under_maintenance)],tags=["speech to text"])
+app.include_router(sttRoute, prefix="/api/v1/stt",tags=["speech to text"])
 app.include_router(ttsRoute, prefix="/api/v1/tts", dependencies=[Depends(under_maintenance)],tags=["text to speech"])
 app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verify_token)],tags=["file upload"])
 app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verify_token)],tags=["user"])
@@ -138,4 +143,4 @@ def get_port():
 
 if __name__ == "__main__":
     port = get_port()
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
