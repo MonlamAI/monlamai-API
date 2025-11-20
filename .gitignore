@@ -4,5 +4,6 @@ env
 __pycache__
 **\__pycache__
 *.pyc
-.logger.txt
+logger.txt
 .python-version
+venv38

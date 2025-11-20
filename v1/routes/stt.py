@@ -310,8 +310,24 @@ async def convert_to_flac(audio_data: bytes, input_filename: str) -> Tuple[bytes
     flac_data = None
     
     try:
-        # Create temporary files with delete=True (will be deleted when closed)
-        input_temp = tempfile.NamedTemporaryFile(suffix=os.path.splitext(input_filename)[1], delete=False)
+        # Normalize the provided name so it works even if it's a full URL
+        safe_name = input_filename or "audio.webm"
+
+        # Strip query string / fragment if a URL was passed
+        safe_name = safe_name.split("?", 1)[0].split("#", 1)[0]
+
+        # Take only the basename (in case a full path/URL was provided)
+        safe_name = os.path.basename(safe_name) or "audio.webm"
+
+        # Derive a safe extension for the temporary input file
+        ext = os.path.splitext(safe_name)[1] or ".webm"
+        # Extra safety: remove characters that are invalid in Windows filenames
+        ext = "".join(ch for ch in ext if ch.isalnum() or ch in [".", "_"])
+        if not ext.startswith("."):
+            ext = "." + ext
+
+        # Create temporary files
+        input_temp = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
         output_temp = tempfile.NamedTemporaryFile(suffix='.flac', delete=False)
         
         # Write input audio to temporary file and close it immediately
@@ -328,8 +344,14 @@ async def convert_to_flac(audio_data: bytes, input_filename: str) -> Tuple[bytes
         with open(output_temp.name, 'rb') as flac_file:
             flac_data = flac_file.read()
         
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  
-        new_filename = f"{os.path.splitext(input_filename)[0]}_{timestamp}.flac"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Build a safe output filename (used only for S3 key / logging)
+        base_name = os.path.splitext(safe_name)[0] or "audio"
+        invalid_chars = '<>:"/\\|?*'
+        base_name = "".join(ch for ch in base_name if ch not in invalid_chars) or "audio"
+
+        new_filename = f"{base_name}_{timestamp}.flac"
         return flac_data, new_filename
             
     except ffmpeg.Error as e:
