@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException,Request,Query,UploadFile,File,Form
 # from v1.utils.speech_recognition import speech_to_text_tibetan,speech_to_text_english
 from v1.libs.get_buffer import get_buffer
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Tuple
 from v1.utils.utils import get_client_metadata
 from v1.model.create_inference import create_speech_to_text
 from v1.model.edit_inference import edit_inference
@@ -13,11 +13,13 @@ import os
 import base64
 import httpx
 import tempfile
-from typing import Tuple
-from v1.utils.mixPanel_track import track_signup_input,track_user_input
+from v1.utils.mixPanel_track import track_user_input
 from v1.libs.upload_file_to_s3 import upload_file_to_s3
 from v1.utils.get_userId_from_cookie import get_user_id_from_cookie
 from datetime import datetime
+from io import BytesIO
+import re
+from pydub import AudioSegment
 
 router = APIRouter()
 
@@ -68,7 +70,25 @@ async def speech_to_text_func(
             flac_file.close()
             os.unlink(flac_file.name)
 
-        text_data, response_time = await transcribe_audio(flac_audio)
+        # --- Chunk, transcribe, and dedupe overlapping text ---
+        chunks = await split_flac_with_overlap(
+            flac_audio,
+            chunk_seconds=30,
+            overlap_seconds=0.5,
+        )
+
+        aggregated_text_parts = []
+        response_times = []
+        for idx, chunk_bytes in enumerate(chunks):
+            text_part, chunk_rt = await transcribe_audio(chunk_bytes)
+            text_part = (text_part or "").strip()
+            if aggregated_text_parts:
+                text_part = merge_chunk_text(aggregated_text_parts[-1], text_part)
+            aggregated_text_parts.append(text_part)
+            response_times.append(chunk_rt)
+
+        text_data = " ".join(part for part in aggregated_text_parts if part)
+        response_time = round(sum(response_times), 4)
 
         client_ip, source_app, city, country = get_client_metadata(client_request)
         generated_id = str(uuid.uuid4())
@@ -137,7 +157,26 @@ async def speech_to_text_func(request:Input, client_request: Request):
         audio=await get_buffer(audio_url)
         client_ip, source_app,city,country = get_client_metadata(client_request)
         flac_audio, flac_filename = await convert_to_flac(audio, request.input)
-        text_data, response_time = await transcribe_audio(flac_audio)
+        # --- Chunk, transcribe, and dedupe overlapping text ---
+        chunks = await split_flac_with_overlap(
+            flac_audio,
+            chunk_seconds=30,
+            overlap_seconds=0.5,
+        )
+
+        aggregated_text_parts = []
+        response_times = []
+        for idx, chunk_bytes in enumerate(chunks):
+            text_part, chunk_rt = await transcribe_audio(chunk_bytes)
+            text_part = (text_part or "").strip()
+            if aggregated_text_parts:
+                text_part = merge_chunk_text(aggregated_text_parts[-1], text_part)
+            aggregated_text_parts.append(text_part)
+            response_times.append(chunk_rt)
+
+        text_data = " ".join(part for part in aggregated_text_parts if part)
+        response_time = round(sum(response_times), 4)
+        
         generated_id=  str(uuid.uuid4())
         stt_data = {
         "id":generated_id,
@@ -316,3 +355,99 @@ async def convert_to_flac(audio_data: bytes, input_filename: str) -> Tuple[bytes
                 os.unlink(output_temp.name)
             except Exception as e:
                 print(f"Warning: Failed to delete temporary output file: {e}")
+
+
+# --- Exact overlap merge: trims only identical suffix/prefix content ---
+def merge_chunk_text(previous: str, current: str) -> str:
+    """
+    Deterministic overlap removal that only trims when an exact match is found.
+    """
+    def tibetan_syllables(text: str) -> List[str]:
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized:
+            return []
+        # Insert spaces after Tibetan tsek to separate syllables like སྐབས་སུ
+        normalized = normalized.replace("་", "་ ")
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        return normalized.split() if normalized else []
+
+    if not previous or not current:
+        return current
+
+    prev_norm = re.sub(r"\s+", " ", previous).strip()
+    curr_norm = re.sub(r"\s+", " ", current).strip()
+
+    if not prev_norm or not curr_norm:
+        return current
+
+    prev_syllables = tibetan_syllables(prev_norm)
+    curr_syllables = tibetan_syllables(curr_norm)
+
+    if not prev_syllables or not curr_syllables:
+        return current
+
+    max_window = min(20, len(prev_syllables), len(curr_syllables))
+
+    for window in range(max_window, 0, -1):
+        if prev_syllables[-window:] == curr_syllables[:window]:
+            trimmed = curr_syllables[window:]
+            return " ".join(trimmed)
+
+    prev_tail = prev_norm[-120:]
+    curr_head = curr_norm[:120]
+    match_length = 0
+    max_prefix = min(len(prev_tail), len(curr_head))
+
+    for i in range(max_prefix):
+        if prev_tail[i] == curr_head[i]:
+            match_length += 1
+        else:
+            break
+
+    if match_length > 0:
+        target_chars = curr_head[:match_length]
+        char_count = 0
+        trim_syllables = 0
+        for syllable in curr_syllables:
+            char_count += len(syllable)
+            trim_syllables += 1
+            if char_count >= len(target_chars):
+                break
+        trimmed = curr_syllables[trim_syllables:]
+        return " ".join(trimmed)
+
+    return current
+
+
+# --- Split FLAC audio into chunks that keep N seconds of overlap ---
+async def split_flac_with_overlap(
+    flac_bytes: bytes,
+    chunk_seconds: float = 30.0,
+    overlap_seconds: float = 0.5,
+) -> List[bytes]:
+    """
+    Split FLAC bytes into overlapping chunks to preserve context between segments.
+    """
+    if overlap_seconds >= chunk_seconds:
+        raise ValueError("overlap_seconds must be smaller than chunk_seconds")
+
+    audio = AudioSegment.from_file(BytesIO(flac_bytes), format="flac")
+    chunk_ms = int(chunk_seconds * 1000)
+    step_ms = int((chunk_seconds - overlap_seconds) * 1000)
+
+    segments: List[bytes] = []
+    start = 0
+    duration = len(audio)
+
+    while start < duration:
+        end = min(start + chunk_ms, duration)
+        segment = audio[start:end]
+        buffer = BytesIO()
+        segment.export(buffer, format="flac")
+        segments.append(buffer.getvalue())
+
+        if end == duration:
+            break
+        start += step_ms
+
+    return segments
