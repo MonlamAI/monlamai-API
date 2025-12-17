@@ -291,7 +291,7 @@ async def translator_mt(text: str, direction: str ):
                 url,
                 json={
                     "model": MT_MODEL_NAME,
-                    "temperature": 0,   # 🔒 Make deterministic
+                    "temperature": 0.6,   # 🔒 Make deterministic
                     "top_p": 1,         # 🔒 Make deterministic
                     "messages": [
                         {
@@ -440,7 +440,7 @@ async def translator_stream_mt(text: str, direction: str,inferenceID, on_complet
         try:
             body = {
                 "model": MT_MODEL_NAME, 
-                "temperature": 0,   #make deterministic
+                "temperature": 0.6,   #make deterministic
                 "top_p": 1,         #make deterministic
                 "messages": [
                     {"role": "system", "content": ("You are a deterministic, context-aware translation model. "
