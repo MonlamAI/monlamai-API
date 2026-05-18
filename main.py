@@ -13,6 +13,9 @@ from v1.routes.user import router as userRoute
 from v1.routes.chat import router as chatRoute
 from v1.routes.waitlist import router as waitRoute
 
+from v2.routes.tts import router as ttsV2Route
+from v2.routes.stt import router as sttV2Route
+
 import uvicorn
 from v1.auth.auth_handler import verify_token 
 import os 
@@ -25,6 +28,8 @@ from slowapi.errors import RateLimitExceeded
 from v1.Config.Connection import prisma_connection
 from dotenv import load_dotenv
 from v1.model.edit_inference import get_inference
+from v2.logging_config import setup_v2_file_logger, get_v2_logger
+import time
 load_dotenv(override=True)
 
 # Setup logging
@@ -66,6 +71,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
+    setup_v2_file_logger()
     await prisma_connection.connect()
 
 @app.on_event("shutdown")
@@ -75,6 +81,7 @@ async def shutdown():
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Middleware to log client IP, request method, and time."""
+    start = time.perf_counter()
     client_ip = request.client.host
     method = request.method
     request_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -84,7 +91,35 @@ async def log_requests(request: Request, call_next):
 
     # Call the next middleware or request handler
     
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        # Log v2 exceptions to v2 file log as well
+        if path.startswith("/api/v2/"):
+            v2_logger = get_v2_logger()
+            v2_logger.exception(
+                "v2_unhandled_exception | ip=%s | method=%s | path=%s | org=%s | req_id=%s",
+                client_ip,
+                method,
+                path,
+                request.headers.get("X-Org-Id"),
+                request.headers.get("X-Request-Id"),
+            )
+        raise
+
+    duration_ms = (time.perf_counter() - start) * 1000.0
+    if path.startswith("/api/v2/"):
+        v2_logger = get_v2_logger()
+        v2_logger.info(
+            "v2_request | status=%s | dur_ms=%.2f | ip=%s | method=%s | path=%s | org=%s | req_id=%s",
+            response.status_code,
+            duration_ms,
+            client_ip,
+            method,
+            path,
+            request.headers.get("X-Org-Id"),
+            request.headers.get("X-Request-Id"),
+        )
     return response
 
 
@@ -131,6 +166,10 @@ app.include_router(s3Route, prefix="/api/v1/upload", dependencies=[Depends(verif
 app.include_router(userRoute, prefix="/api/v1/user", dependencies=[Depends(verify_token)],tags=["user"])
 app.include_router(chatRoute, prefix="/api/v1/chat", dependencies=[Depends(verify_token)],tags=["chat"])
 app.include_router(waitRoute, prefix="/api/v1/waitlist", dependencies=[Depends(verify_token)],tags=["waitlist"])
+
+# v2 gateway routes (proxy to dedicated STT/TTS backends)
+app.include_router(ttsV2Route, prefix="/api/v2/tts", dependencies=[Depends(verify_token)], tags=["tts v2"])
+app.include_router(sttV2Route, prefix="/api/v2/stt", dependencies=[Depends(verify_token)], tags=["stt v2"])
 
 
 def get_port():

@@ -5,5 +5,7 @@ __pycache__
 **\__pycache__
 *.pyc
 logger.txt
+logs/
+*.log
 .python-version
 venv38
